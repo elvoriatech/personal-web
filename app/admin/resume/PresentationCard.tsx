@@ -50,12 +50,14 @@ export function PresentationCard({
   photoDataUrl,
   onVariant,
   onPhoto,
+  onPreview,
 }: {
   variant: ResumeVariant;
   /** undefined = bundled portrait, "" = no photo, otherwise an uploaded data URL. */
   photoDataUrl: string | undefined;
   onVariant: (v: ResumeVariant) => void;
   onPhoto: (dataUrl: string | undefined) => void;
+  onPreview: () => void;
 }) {
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
@@ -210,7 +212,18 @@ export function PresentationCard({
           <Link> would attempt a client-side RSC navigation and prefetch a .docx. */}
       {/* eslint-disable @next/next/no-html-link-for-pages */}
       <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
-        <span className="mr-1 text-[12px] text-muted">Download the last saved version:</span>
+        <button
+          type="button"
+          onClick={onPreview}
+          className="inline-flex min-h-[36px] items-center gap-1.5 rounded-pill border border-accent bg-accent px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white hover:bg-accent-deep"
+        >
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8Z" />
+            <circle cx="8" cy="8" r="2" />
+          </svg>
+          Preview both templates
+        </button>
+        <span className="ml-2 mr-1 text-[12px] text-muted">Download the last saved version:</span>
         <a
           href="/api/documents/resume?variant=ats"
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"

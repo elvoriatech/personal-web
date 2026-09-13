@@ -120,7 +120,16 @@ export function SmallButton({
 }
 
 /** Sticky save bar; disables itself while the action is in flight. */
-export function SaveBar({ state, canSave }: { state: SaveState; canSave: boolean }) {
+export function SaveBar({
+  state,
+  canSave,
+  extra,
+}: {
+  state: SaveState;
+  canSave: boolean;
+  /** Rendered next to the save button — e.g. a Preview action. */
+  extra?: ReactNode;
+}) {
   const { pending } = useFormStatus();
   return (
     <div className="sticky bottom-0 z-10 -mx-1 mt-8 flex flex-wrap items-center gap-4 border-t border-line bg-bg-tint/95 px-1 py-4 backdrop-blur">
@@ -131,6 +140,7 @@ export function SaveBar({ state, canSave }: { state: SaveState; canSave: boolean
       >
         {pending ? "Saving…" : "Save changes"}
       </button>
+      {extra}
       <p
         role="status"
         aria-live="polite"

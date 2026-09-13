@@ -5,6 +5,7 @@ import { saveResume, type SaveState } from "../actions";
 import { Card, Field, SaveBar, SmallButton, TextArea } from "@/components/admin/Fields";
 import type { ResumeDoc } from "@/lib/documents/types";
 import { PresentationCard } from "./PresentationCard";
+import { ResumePreviewDialog } from "./ResumePreviewDialog";
 
 const emptyRole = {
   title: "",
@@ -23,10 +24,13 @@ export function ResumeEditor({
   canSave: boolean;
 }) {
   const [doc, setDoc] = useState<ResumeDoc>(initial);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [state, action] = useActionState<SaveState, FormData>(saveResume, {
     status: "idle",
     message: "",
   });
+  // Compared against what the server rendered; cheap enough for a form this size.
+  const dirty = JSON.stringify(doc) !== JSON.stringify(initial);
 
   const set = <K extends keyof ResumeDoc>(key: K, value: ResumeDoc[K]) =>
     setDoc((d) => ({ ...d, [key]: value }));
@@ -44,6 +48,7 @@ export function ResumeEditor({
           variant={doc.preferredVariant ?? "ats"}
           photoDataUrl={doc.photoDataUrl}
           onVariant={(v) => set("preferredVariant", v)}
+          onPreview={() => setPreviewOpen(true)}
           onPhoto={(dataUrl) =>
             setDoc((d) => {
               // undefined means "back to the bundled portrait": drop the key
@@ -276,7 +281,27 @@ export function ResumeEditor({
         </Card>
       </div>
 
-      <SaveBar state={state} canSave={canSave} />
+      <SaveBar
+        state={state}
+        canSave={canSave}
+        extra={
+          <button
+            type="button"
+            onClick={() => setPreviewOpen(true)}
+            className="min-h-[44px] rounded-pill border border-line bg-surface px-6 font-display text-[12.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
+          >
+            Preview
+          </button>
+        }
+      />
+
+      <ResumePreviewDialog
+        open={previewOpen}
+        resume={doc}
+        variant={doc.preferredVariant ?? "ats"}
+        dirty={dirty}
+        onClose={() => setPreviewOpen(false)}
+      />
     </form>
   );
 }
