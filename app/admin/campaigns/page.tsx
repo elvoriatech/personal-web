@@ -1,0 +1,81 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { isSignedIn } from "@/lib/auth";
+import { isCampaignsConfigured, listRecipients, recipientStats } from "@/lib/campaigns/store";
+import { getActiveSendJob } from "@/lib/campaigns/jobs";
+import type { Recipient, SendJob } from "@/lib/campaigns/types";
+import { mailerMode } from "@/lib/campaigns/mailer";
+import { CampaignsPanel } from "./CampaignsPanel";
+
+export const dynamic = "force-dynamic";
+
+export default async function AdminCampaignsPage() {
+  if (!(await isSignedIn())) redirect("/admin/login");
+
+  const configured = isCampaignsConfigured();
+  const mode = mailerMode();
+
+  // Loaded here rather than in a mount effect, so the first paint already has
+  // the data and React is not asked to cascade a render on mount.
+  let rows: Recipient[] = [];
+  let stats: Record<string, number> = {};
+  let job: SendJob | null = null;
+  if (configured) {
+    try {
+      const [page, s, j] = await Promise.all([
+        listRecipients({ limit: 200 }),
+        recipientStats(),
+        getActiveSendJob(),
+      ]);
+      rows = page.rows;
+      stats = s;
+      job = j;
+    } catch (err) {
+      // A missing schema must not blank the page; the panel shows the error.
+      console.error("[admin] campaigns load failed:", err);
+    }
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-display text-[24px] font-semibold text-ink">Campaigns</h1>
+        <Link
+          href="/admin/campaigns/templates"
+          className="inline-flex min-h-[38px] items-center rounded-pill border border-line px-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
+        >
+          Edit templates
+        </Link>
+      </div>
+      <p className="mt-1.5 max-w-[72ch] text-[13.5px] text-body">
+        Import prospects, audit their domains, then send in batches. Sending is
+        throttled and resumable — progress is stored per recipient, so a timeout
+        never double-sends.
+      </p>
+
+      {mode === "unconfigured" && (
+        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12.5px] text-red-800">
+          No mail credentials. Set <code>EMAIL_USER</code> and <code>EMAIL_PASS</code>{" "}
+          (an app password from your mail provider, not your account password) before sending.
+        </p>
+      )}
+
+      <p className="mt-3 max-w-[72ch] rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] leading-[1.6] text-amber-900">
+        <strong>Before you send:</strong> unsolicited commercial email to businesses
+        is restricted in Germany and the EU (UWG §7, GDPR). Every campaign email
+        carries an opt-out line, and opted-out addresses are permanently excluded.
+        Write to genuine business addresses, keep volumes low, and personalise —
+        a reply is worth more than a hundred sends.
+      </p>
+
+      <div className="mt-7">
+        <CampaignsPanel
+          configured={configured}
+          initialRows={rows}
+          initialStats={stats}
+          initialJob={job}
+        />
+      </div>
+    </div>
+  );
+}
