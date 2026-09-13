@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
-import type { ResumeDoc, ResumeVariant } from "@/lib/documents/types";
+import type { PhotoShape, ResumeDoc, ResumeVariant } from "@/lib/documents/types";
+
+/** Mirrors the mask applied to the .docx image in lib/documents/photo.ts. */
+export const PHOTO_SHAPE_CLASS: Record<PhotoShape, string> = {
+  square: "",
+  circle: "rounded-full",
+  rounded: "rounded-[18%]",
+};
 
 /**
  * HTML rendering of the résumé in either template. The .docx builders in
@@ -202,7 +209,7 @@ function DesignSheet({ resume, photoSrc }: { resume: ResumeDoc; photoSrc: string
             alt=""
             width={110}
             height={110}
-            className="mx-auto mb-3 block h-[110px] w-[110px] object-cover"
+            className={`mx-auto mb-3 block h-[110px] w-[110px] object-cover ${PHOTO_SHAPE_CLASS[resume.photoShape ?? "square"]}`}
           />
         )}
         <p className="text-center text-[15px] font-bold leading-tight">{resume.fullName}</p>

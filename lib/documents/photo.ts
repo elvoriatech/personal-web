@@ -2,7 +2,8 @@ import "server-only";
 
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { ResumeDoc } from "./types";
+import sharp from "sharp";
+import type { PhotoShape, ResumeDoc } from "./types";
 
 export type ResumePhoto = {
   data: Buffer;
@@ -48,4 +49,34 @@ export async function resolveResumePhoto(resume: ResumeDoc): Promise<ResumePhoto
   } catch {
     return null;
   }
+}
+
+/** Pixels on each side of the embedded image — 110pt in the document at 4×. */
+const SHAPED_SIZE = 440;
+
+/**
+ * The photo as it should be embedded in the .docx. Word cannot clip a picture
+ * to a circle from docx-js, so circle and rounded crops are baked into a PNG
+ * with a transparent mask; square passes the source through untouched.
+ */
+export async function shapedResumePhoto(
+  resume: ResumeDoc
+): Promise<ResumePhoto | null> {
+  const photo = await resolveResumePhoto(resume);
+  if (!photo) return null;
+  const shape: PhotoShape = resume.photoShape ?? "square";
+  if (shape === "square") return photo;
+
+  const s = SHAPED_SIZE;
+  const radius = shape === "circle" ? s / 2 : Math.round(s * 0.18);
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}"><rect width="${s}" height="${s}" rx="${radius}" ry="${radius}" fill="#fff"/></svg>`
+  );
+  const data = await sharp(photo.data)
+    .rotate() // honour EXIF orientation before cropping
+    .resize(s, s, { fit: "cover", position: "attention" })
+    .composite([{ input: mask, blend: "dest-in" }])
+    .png()
+    .toBuffer();
+  return { data, type: "png", contentType: "image/png" };
 }

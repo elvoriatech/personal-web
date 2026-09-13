@@ -2,7 +2,10 @@
 
 import { useId, useRef, useState } from "react";
 import { Card } from "@/components/admin/Fields";
-import type { ResumeVariant } from "@/lib/documents/types";
+import { PHOTO_SHAPE_CLASS } from "@/components/documents/ResumeSheet";
+import { PHOTO_SHAPES, type PhotoShape, type ResumeVariant } from "@/lib/documents/types";
+
+const SHAPE_LABEL: Record<PhotoShape, string> = { square: "Square", circle: "Circle", rounded: "Rounded" };
 
 const VARIANTS: { id: ResumeVariant; label: string; description: string; bestFor: string }[] = [
   {
@@ -48,8 +51,10 @@ function kb(dataUrl: string): string {
 export function PresentationCard({
   variant,
   photoDataUrl,
+  photoShape,
   onVariant,
   onPhoto,
+  onShape,
   onPreview,
 }: {
   variant: ResumeVariant;
@@ -57,12 +62,15 @@ export function PresentationCard({
   photoDataUrl: string | undefined;
   onVariant: (v: ResumeVariant) => void;
   onPhoto: (dataUrl: string | undefined) => void;
+  photoShape: PhotoShape;
+  onShape: (shape: PhotoShape) => void;
   onPreview: () => void;
 }) {
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const radioName = useId();
+  const shapeName = useId();
 
   const usingBundled = photoDataUrl === undefined;
   const noPhoto = photoDataUrl === "";
@@ -139,7 +147,7 @@ export function PresentationCard({
           Photo for the two-column template
         </p>
         <div className="flex flex-wrap items-start gap-5 rounded-xl border border-line bg-bg-tint/60 p-4">
-          <div className="relative h-[112px] w-[112px] shrink-0 overflow-hidden rounded-xl border border-line bg-surface">
+          <div className={`relative h-[112px] w-[112px] shrink-0 overflow-hidden border border-line bg-surface ${PHOTO_SHAPE_CLASS[photoShape] || "rounded-none"}`}>
             {noPhoto ? (
               <span className="flex h-full w-full items-center justify-center text-center text-[11px] leading-[1.4] text-muted">
                 No photo
@@ -202,6 +210,40 @@ export function PresentationCard({
               <p role="alert" className="text-[12.5px] text-red-600">
                 {error}
               </p>
+            )}
+            {!noPhoto && (
+              <fieldset className="pt-1">
+                <legend className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                  Shape
+                </legend>
+                <div role="radiogroup" className="flex flex-wrap gap-2">
+                  {PHOTO_SHAPES.map((shape) => {
+                    const active = shape === photoShape;
+                    return (
+                      <label
+                        key={shape}
+                        className={`inline-flex cursor-pointer items-center gap-2 rounded-pill border py-1.5 pr-3.5 pl-2 text-[12px] font-semibold transition-colors has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent/40 ${
+                          active ? "border-accent bg-bg-violet text-accent-deep" : "border-line bg-surface text-body hover:border-accent/50"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name={shapeName}
+                          value={shape}
+                          checked={active}
+                          onChange={() => onShape(shape)}
+                          className="sr-only"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className={`inline-block h-4 w-4 ${active ? "bg-accent" : "bg-muted/60"} ${PHOTO_SHAPE_CLASS[shape] || ""}`}
+                        />
+                        {SHAPE_LABEL[shape]}
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
             )}
           </div>
         </div>

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
-import { site } from "@/content/site";
+import { site, socials } from "@/content/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -75,6 +75,8 @@ const personJsonLd = {
   jobTitle: "Senior Software Engineer · AI Engineer",
   description: site.description,
   url: site.url,
+  // Public profiles, so search engines can tie them to this identity.
+  sameAs: socials.map((s) => s.href).filter(Boolean),
   email: `mailto:${site.email}`,
   telephone: site.phone,
   address: {

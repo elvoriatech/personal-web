@@ -18,7 +18,7 @@ import {
   VerticalAlign,
   WidthType,
 } from "docx";
-import { resolveResumePhoto } from "./photo";
+import { shapedResumePhoto } from "./photo";
 import { fillPlaceholders, type CoverLetterDoc, type ResumeDoc } from "./types";
 
 export type { ResumeVariant } from "./types";
@@ -424,8 +424,8 @@ function sidebarLine(text: string, opts: { bold?: boolean; size?: number } = {})
 }
 
 async function photoParagraph(resume: ResumeDoc): Promise<Paragraph | null> {
-  // Uploaded photo, bundled portrait, or none — see resolveResumePhoto.
-  const photo = await resolveResumePhoto(resume);
+  // Uploaded photo, bundled portrait, or none — cropped to the chosen shape.
+  const photo = await shapedResumePhoto(resume);
   if (!photo) return null;
   return new Paragraph({
     alignment: AlignmentType.CENTER,

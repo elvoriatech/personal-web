@@ -66,8 +66,8 @@ export const documents = [
  * appear automatically; left empty they are omitted rather than rendered dead.
  */
 export const socials: { label: string; href: string }[] = [
-  { label: "LinkedIn", href: "" },
-  { label: "GitHub", href: "" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/zahoorahmed" },
+  { label: "GitHub", href: "https://github.com/zwebapps" },
   { label: "Xing", href: "" },
 ];
 

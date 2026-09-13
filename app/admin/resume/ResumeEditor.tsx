@@ -47,6 +47,8 @@ export function ResumeEditor({
         <PresentationCard
           variant={doc.preferredVariant ?? "ats"}
           photoDataUrl={doc.photoDataUrl}
+          photoShape={doc.photoShape ?? "square"}
+          onShape={(s) => set("photoShape", s)}
           onVariant={(v) => set("preferredVariant", v)}
           onPreview={() => setPreviewOpen(true)}
           onPhoto={(dataUrl) =>

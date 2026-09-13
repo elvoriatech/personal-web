@@ -3,6 +3,10 @@
 /** "ats" = single column, no tables or images; "design" = two-column sidebar with photo. */
 export type ResumeVariant = "ats" | "design";
 
+/** How the two-column photo is cropped. */
+export type PhotoShape = "square" | "circle" | "rounded";
+export const PHOTO_SHAPES: PhotoShape[] = ["square", "circle", "rounded"];
+
 export type ResumeRole = {
   title: string;
   company: string;
@@ -58,6 +62,8 @@ export type ResumeDoc = {
    * Unset → the portrait bundled with the site; "" → build without a photo.
    */
   photoDataUrl?: string;
+  /** Crop shape for that photo. Unset → square, which is what the original file used. */
+  photoShape?: PhotoShape;
 };
 
 export type CoverLetterDoc = {

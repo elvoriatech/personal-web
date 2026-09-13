@@ -12,7 +12,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { headers } from "next/headers";
 import { getDocuments, saveDocuments } from "@/lib/documents/store";
 import { PHOTO_DATA_URL_RE, PHOTO_MAX_CHARS } from "@/lib/documents/photo";
-import type { CoverLetterDoc, EmailTemplate, ResumeDoc } from "@/lib/documents/types";
+import { PHOTO_SHAPES, type CoverLetterDoc, type EmailTemplate, type ResumeDoc } from "@/lib/documents/types";
 
 export type AuthState = { error: string };
 export type SaveState = { status: "idle" | "saved" | "error"; message: string };
@@ -91,6 +91,9 @@ export async function saveResume(
   }
   if (parsed.preferredVariant && parsed.preferredVariant !== "ats" && parsed.preferredVariant !== "design") {
     return { status: "error", message: "Unknown résumé template." };
+  }
+  if (parsed.photoShape && !PHOTO_SHAPES.includes(parsed.photoShape)) {
+    return { status: "error", message: "Unknown photo shape." };
   }
   return persist((bundle) => {
     bundle.resume = parsed;
