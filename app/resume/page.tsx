@@ -23,7 +23,7 @@ export default async function ResumePage() {
     .join("  |  ");
 
   const ats = {
-    href: "/api/documents/resume",
+    href: "/api/documents/resume?variant=ats",
     label: "Single column (ATS)",
     hint: "Upload this one to job portals — no tables, no images, parses cleanly.",
   };

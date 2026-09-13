@@ -11,11 +11,14 @@ export async function GET(
   { params }: { params: Promise<{ doc: string }> }
 ) {
   const { doc } = await params;
-  const variant =
-    new URL(request.url).searchParams.get("variant") === "design"
-      ? "design"
-      : "ats";
   const bundle = await getDocuments();
+  // Explicit ?variant wins; without one, serve the template chosen in the
+  // admin — so a static link like the hero's "Download CV" follows that choice.
+  const requested = new URL(request.url).searchParams.get("variant");
+  const variant =
+    requested === "design" || requested === "ats"
+      ? requested
+      : (bundle.resume.preferredVariant ?? "ats");
 
   let buffer: Buffer;
   let filename: string;

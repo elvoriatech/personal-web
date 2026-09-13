@@ -212,7 +212,7 @@ export function PresentationCard({
       <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
         <span className="mr-1 text-[12px] text-muted">Download the last saved version:</span>
         <a
-          href="/api/documents/resume"
+          href="/api/documents/resume?variant=ats"
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
           Single column .docx

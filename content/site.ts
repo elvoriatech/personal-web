@@ -106,7 +106,9 @@ export const hero = {
   subheadTail: "Engineer",
   body: "I architect enterprise-grade applications and production-ready AI systems — RAG pipelines, multi-agent workflows and scalable microservices on AWS and Kubernetes.",
   primaryCta: { label: "View My Work", href: "/#projects" },
-  secondaryCta: { label: "Download CV", href: "/Zahoor_Ahmed_Resume.pdf" },
+  // Served by the document builder in whichever template is chosen in the admin,
+  // so the CV can never be older than the content.
+  secondaryCta: { label: "Download CV", href: "/api/documents/resume" },
 } as const;
 
 /**
