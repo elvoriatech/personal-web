@@ -2,6 +2,9 @@ import Image from "next/image";
 import portrait from "@/assets/zahoor-portrait.jpg";
 import { hero, stats } from "@/content/site";
 import { ArrowRight, ButtonLink } from "@/components/ui/Button";
+import { Stagger, StaggerItem } from "@/components/ui/Stagger";
+import { CountUp } from "@/components/ui/CountUp";
+import { RiseIn } from "@/components/ui/RiseIn";
 import {
   ObservabilityPanel,
   PipelinePanel,
@@ -25,27 +28,27 @@ export function Hero() {
 
       <div className="container-site relative grid items-center gap-12 pb-16 pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.02fr)] lg:gap-8 lg:pb-24 lg:pt-16">
         {/* ---------------- copy ---------------- */}
-        <div className="max-w-xl">
-          <p className="inline-flex items-center rounded-pill border border-line bg-surface px-4 py-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-deep">
+        <Stagger className="max-w-xl" delay={0.1}>
+          <StaggerItem><p className="inline-flex items-center rounded-pill border border-line bg-surface px-4 py-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.18em] text-accent-deep">
             {hero.eyebrow}
-          </p>
+          </p></StaggerItem>
 
-          <h1 className="mt-6 font-display text-[clamp(40px,6.4vw,66px)] font-bold leading-[1.04] text-ink">
+          <StaggerItem><h1 className="mt-6 font-display text-[clamp(40px,6.4vw,66px)] font-bold leading-[1.04] text-ink">
             {hero.headline}
-          </h1>
+          </h1></StaggerItem>
 
-          <p className="mt-3 font-display text-[clamp(22px,3.4vw,38px)] font-normal leading-[1.22] text-body">
+          <StaggerItem><p className="mt-3 font-display text-[clamp(22px,3.4vw,38px)] font-normal leading-[1.22] text-body">
             {hero.subheadLead}
             <br />
             <span className="text-accent-deep">{hero.subheadAccent}</span>{" "}
             <span className="text-ink">{hero.subheadTail}</span>
-          </p>
+          </p></StaggerItem>
 
-          <p className="mt-6 max-w-[46ch] text-[16px] leading-[1.7] text-body">
+          <StaggerItem><p className="mt-6 max-w-[46ch] text-[16px] leading-[1.7] text-body">
             {hero.body}
-          </p>
+          </p></StaggerItem>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <StaggerItem><div className="mt-8 flex flex-wrap items-center gap-3">
             <ButtonLink href={hero.primaryCta.href} size="lg">
               {hero.primaryCta.label}
               <ArrowRight />
@@ -67,10 +70,10 @@ export function Hero() {
                 />
               </svg>
             </ButtonLink>
-          </div>
+          </div></StaggerItem>
 
           {/* ---------------- stats ---------------- */}
-          <dl className="mt-10 flex items-center gap-x-5 sm:gap-x-7">
+          <StaggerItem><dl className="mt-10 flex items-center gap-x-5 sm:gap-x-7">
             {stats.map((stat, i) => (
               <div
                 key={stat.label}
@@ -97,7 +100,7 @@ export function Hero() {
                 </span>
                 <div>
                   <dd className="font-display text-[20px] font-bold leading-none text-ink">
-                    {stat.value}
+                    <CountUp value={stat.value} />
                   </dd>
                   <dt className="mt-1 font-display text-[9px] font-medium uppercase leading-tight tracking-[0.11em] text-muted">
                     {stat.label}
@@ -105,11 +108,11 @@ export function Hero() {
                 </div>
               </div>
             ))}
-          </dl>
-        </div>
+          </dl></StaggerItem>
+        </Stagger>
 
         {/* ---------------- portrait ---------------- */}
-        <div className="relative mx-auto w-full max-w-[560px] lg:mx-0">
+        <RiseIn className="relative mx-auto w-full max-w-[560px] lg:mx-0" delay={0.25}>
           <div className="relative aspect-square">
             {/* concentric decorative rings, hugging the portrait */}
             <div
@@ -135,7 +138,7 @@ export function Hero() {
             <ObservabilityPanel className="absolute -left-5 top-[44%] w-[40%] max-w-[186px]" />
             <PipelinePanel className="absolute -bottom-1 right-[2%] w-[35%] max-w-[162px]" />
           </div>
-        </div>
+        </RiseIn>
       </div>
     </section>
   );
