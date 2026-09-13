@@ -71,8 +71,8 @@ export async function submitContact(
     const { error } = await resend.emails.send({
       /* Resend requires a verified domain for a custom sender. Until one
          exists, onboarding@resend.dev delivers to the account owner. */
-      from: process.env.CONTACT_FROM_EMAIL ?? "Portfolio <onboarding@resend.dev>",
-      to: process.env.CONTACT_TO_EMAIL ?? site.email,
+      from: process.env.CONTACT_FROM_EMAIL || "Portfolio <onboarding@resend.dev>",
+      to: process.env.CONTACT_TO_EMAIL || site.email,
       replyTo: email,
       subject: `New enquiry from ${name}`,
       text: `From: ${name} <${email}>\n\n${message}`,

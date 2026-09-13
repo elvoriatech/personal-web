@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/campaigns/guard";
 import { plainTextToHtml, wrapCampaignEmailHtml } from "@/lib/campaigns/emailLayout";
+import { site } from "@/content/site";
 import { getTemplate } from "@/lib/campaigns/store";
 import { applyTemplateVars } from "@/lib/campaigns/templateVars";
 import type { EmailTemplateType } from "@/lib/campaigns/types";
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
       preheader: applyTemplateVars(template.subject, vars),
       showOptOut: true,
       ctaLabel: "See my work",
-      ctaHref: process.env.NEXT_PUBLIC_SITE_URL ?? "https://zahoor-ahmed.vercel.app",
+      ctaHref: site.url,
     }
   );
 

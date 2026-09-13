@@ -25,7 +25,7 @@ export function isMailConfigured(): boolean {
 }
 
 export function fromAddress(): string {
-  const address = process.env.EMAIL_USER ?? process.env.CONTACT_FROM_EMAIL ?? site.email;
+  const address = process.env.EMAIL_USER || process.env.CONTACT_FROM_EMAIL || site.email;
   return `${site.name} <${address}>`;
 }
 
@@ -35,11 +35,11 @@ function getTransporter(): Transporter {
   if (!transporter) {
     // Outlook/Hotmail is the default: it only offers STARTTLS on 587 and
     // refuses implicit TLS on 465, so `secure` defaults to false here.
-    const port = Number(process.env.EMAIL_PORT ?? 587);
-    const secure = (process.env.EMAIL_SECURE ?? "false") === "true";
+    const port = Number(process.env.EMAIL_PORT || 587);
+    const secure = (process.env.EMAIL_SECURE || "false") === "true";
 
     transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST ?? "smtp-mail.outlook.com",
+      host: process.env.EMAIL_HOST || "smtp-mail.outlook.com",
       port,
       secure,
       // Refuse to fall back to an unencrypted session if STARTTLS is missing.
@@ -98,7 +98,7 @@ export async function sendHtmlEmail(params: {
     const { Resend } = await import("resend");
     const resend = new Resend(process.env.RESEND_API_KEY);
     const { data, error } = await resend.emails.send({
-      from: process.env.CONTACT_FROM_EMAIL ?? "onboarding@resend.dev",
+      from: process.env.CONTACT_FROM_EMAIL || "onboarding@resend.dev",
       to: params.to,
       bcc: params.bcc,
       replyTo: params.replyTo,

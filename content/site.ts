@@ -1,5 +1,29 @@
 import { projects } from "./projects";
 
+const FALLBACK_SITE_URL = "https://zahoorahmed.de";
+
+/**
+ * Resolves the canonical site URL.
+ *
+ * Two traps this avoids. `??` only falls back on null/undefined, so an env var
+ * set to an empty string passes straight through and `new URL("")` throws at
+ * module scope — which fails the production build with an opaque error. And a
+ * typo'd value would throw the same way, so the URL is validated here rather
+ * than at every call site.
+ *
+ * The property is read literally because Next only inlines NEXT_PUBLIC_* for a
+ * statically written access; a dynamic lookup would be undefined in the browser.
+ */
+function resolveSiteUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!raw) return FALLBACK_SITE_URL;
+  try {
+    return new URL(raw).toString().replace(/\/$/, "");
+  } catch {
+    return FALLBACK_SITE_URL;
+  }
+}
+
 /**
  * Single source of truth for site-wide copy and contact details.
  * Everything here comes from Zahoor's CV — edit this file, not the JSX.
@@ -13,7 +37,7 @@ export const site = {
   tagline: "Senior Software Engineer & Applied AI Engineer",
   description:
     "Senior Software Engineer with 8+ years architecting enterprise-grade applications, now specialising in Applied AI Engineering — RAG systems, multi-agent workflows and scalable microservices on AWS and Kubernetes.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://zahoorahmed.de",
+  url: resolveSiteUrl(),
   location: "Mülheim-Kärlich, Germany",
   email: "zahoor_ahmed143@hotmail.com",
   phone: "+49 162 3363430",
