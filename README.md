@@ -155,9 +155,19 @@ stop the moment someone replies or opts out.
 
 ### Running the worker
 
-In development the admin tab drives the job itself. In production Vercel Cron
-hits `/api/cron/campaigns` every 10 minutes (see `vercel.json`), authenticated
-with `CRON_SECRET`.
+Three things can advance a send job, in order of how often they run:
+
+1. **The admin tab.** While `/admin/campaigns` is open it drains batches itself,
+   so a campaign you start by hand finishes without any cron at all.
+2. **GitHub Actions** (`.github/workflows/campaign-worker.yml`), every 15
+   minutes. This is the real cadence — Vercel's Hobby plan permits only one
+   cron run per day, which cannot drain a job in batches. Actions is free on a
+   public repo. It needs two repository secrets: `SITE_URL` and `CRON_SECRET`.
+3. **Vercel Cron**, once daily at 07:00 UTC — a safety net that queues due
+   follow-ups even if Actions is disabled.
+
+GitHub disables scheduled workflows on repositories with no activity for 60
+days; if outreach goes quiet for two months, re-enable it in the Actions tab.
 
 ### Mail transport
 
