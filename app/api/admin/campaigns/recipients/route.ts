@@ -22,6 +22,12 @@ export async function GET(request: Request) {
         offset: Number(url.searchParams.get("offset") ?? 0),
         status: (url.searchParams.get("status") as RecipientStatus | "all") ?? "all",
         search: url.searchParams.get("search") ?? "",
+        optedOut:
+          url.searchParams.get("optedOut") === "true"
+            ? true
+            : url.searchParams.get("optedOut") === "false"
+              ? false
+              : undefined,
       }),
       recipientStats(),
     ]);

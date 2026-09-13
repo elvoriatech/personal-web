@@ -132,3 +132,10 @@ CREATE TABLE IF NOT EXISTS em_send_jobs (
 
 CREATE INDEX IF NOT EXISTS em_send_jobs_status_created_idx
   ON em_send_jobs (status, created_at DESC);
+
+-- Visual theme chosen per send ('branded' card or 'plain' letter). Added after
+-- launch, so it is an idempotent ALTER rather than a column in the CREATE.
+ALTER TABLE em_campaigns ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'branded'
+  CHECK (theme IN ('branded', 'plain'));
+ALTER TABLE em_send_jobs ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'branded'
+  CHECK (theme IN ('branded', 'plain'));

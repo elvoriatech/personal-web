@@ -94,19 +94,24 @@ export function SmallButton({
   children,
   onClick,
   tone = "neutral",
+  disabled = false,
 }: {
   children: ReactNode;
   onClick: () => void;
-  tone?: "neutral" | "danger";
+  tone?: "neutral" | "danger" | "primary";
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex min-h-[34px] items-center rounded-pill border px-3 text-[11.5px] font-semibold uppercase tracking-[0.08em] transition-colors ${
+      disabled={disabled}
+      className={`inline-flex min-h-[34px] items-center rounded-pill border px-3 text-[11.5px] font-semibold uppercase tracking-[0.08em] transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
         tone === "danger"
-          ? "border-red-200 text-red-700 hover:bg-red-50"
-          : "border-line text-body hover:border-accent hover:text-accent-deep"
+          ? "border-red-200 text-red-700 hover:bg-red-50 disabled:hover:bg-transparent"
+          : tone === "primary"
+            ? "border-accent bg-accent text-white hover:bg-accent-deep disabled:hover:bg-accent"
+            : "border-line text-body hover:border-accent hover:text-accent-deep disabled:hover:border-line disabled:hover:text-body"
       }`}
     >
       {children}

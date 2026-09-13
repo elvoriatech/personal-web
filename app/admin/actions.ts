@@ -11,6 +11,7 @@ import {
 import { rateLimit } from "@/lib/rateLimit";
 import { headers } from "next/headers";
 import { getDocuments, saveDocuments } from "@/lib/documents/store";
+import { PHOTO_DATA_URL_RE, PHOTO_MAX_CHARS } from "@/lib/documents/photo";
 import type { CoverLetterDoc, EmailTemplate, ResumeDoc } from "@/lib/documents/types";
 
 export type AuthState = { error: string };
@@ -78,6 +79,18 @@ export async function saveResume(
     parsed = JSON.parse(raw) as ResumeDoc;
   } catch {
     return { status: "error", message: "The editor sent malformed data." };
+  }
+  // The photo is the one field a browser can make arbitrarily large or odd.
+  if (parsed.photoDataUrl) {
+    if (parsed.photoDataUrl.length > PHOTO_MAX_CHARS) {
+      return { status: "error", message: "The photo is too large. Upload it again so it is resized." };
+    }
+    if (!PHOTO_DATA_URL_RE.test(parsed.photoDataUrl)) {
+      return { status: "error", message: "The photo must be a JPEG or PNG." };
+    }
+  }
+  if (parsed.preferredVariant && parsed.preferredVariant !== "ats" && parsed.preferredVariant !== "design") {
+    return { status: "error", message: "Unknown résumé template." };
   }
   return persist((bundle) => {
     bundle.resume = parsed;

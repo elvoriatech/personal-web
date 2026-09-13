@@ -1,5 +1,8 @@
 /** Shapes shared by the ATS views, the .docx exporters and the admin editors. */
 
+/** "ats" = single column, no tables or images; "design" = two-column sidebar with photo. */
+export type ResumeVariant = "ats" | "design";
+
 export type ResumeRole = {
   title: string;
   company: string;
@@ -45,6 +48,16 @@ export type ResumeDoc = {
   education: ResumeEducation[];
   certifications: ResumeEducation[];
   languages: string;
+  /**
+   * Which build the public page offers first and emails attach by default.
+   * Optional so bundles saved before this existed keep loading; treat unset as "ats".
+   */
+  preferredVariant?: ResumeVariant;
+  /**
+   * Photo for the two-column build, as a data: URL produced by the admin uploader.
+   * Unset → the portrait bundled with the site; "" → build without a photo.
+   */
+  photoDataUrl?: string;
 };
 
 export type CoverLetterDoc = {

@@ -1,7 +1,5 @@
 import "server-only";
 
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
 import {
   AlignmentType,
   BorderStyle,
@@ -20,9 +18,10 @@ import {
   VerticalAlign,
   WidthType,
 } from "docx";
+import { resolveResumePhoto } from "./photo";
 import { fillPlaceholders, type CoverLetterDoc, type ResumeDoc } from "./types";
 
-export type ResumeVariant = "ats" | "design";
+export type { ResumeVariant } from "./types";
 
 /**
  * ATS-safe document construction.
@@ -424,30 +423,27 @@ function sidebarLine(text: string, opts: { bold?: boolean; size?: number } = {})
   });
 }
 
-async function photoParagraph(): Promise<Paragraph | null> {
-  try {
-    const data = await readFile(join(process.cwd(), "assets", "zahoor-portrait.jpg"));
-    return new Paragraph({
-      alignment: AlignmentType.CENTER,
-      spacing: { after: 160 },
-      children: [
-        new ImageRun({
-          type: "jpg",
-          data,
-          transformation: { width: 110, height: 110 },
-        }),
-      ],
-    });
-  } catch {
-    // A missing portrait must not break the export.
-    return null;
-  }
+async function photoParagraph(resume: ResumeDoc): Promise<Paragraph | null> {
+  // Uploaded photo, bundled portrait, or none — see resolveResumePhoto.
+  const photo = await resolveResumePhoto(resume);
+  if (!photo) return null;
+  return new Paragraph({
+    alignment: AlignmentType.CENTER,
+    spacing: { after: 160 },
+    children: [
+      new ImageRun({
+        type: photo.type,
+        data: photo.data,
+        transformation: { width: 110, height: 110 },
+      }),
+    ],
+  });
 }
 
 export async function buildResumeDesignDocx(resume: ResumeDoc): Promise<Buffer> {
   const sidebar: Paragraph[] = [];
 
-  const photo = await photoParagraph();
+  const photo = await photoParagraph(resume);
   if (photo) sidebar.push(photo);
 
   sidebar.push(

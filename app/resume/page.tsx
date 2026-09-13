@@ -22,22 +22,21 @@ export default async function ResumePage() {
     .filter(Boolean)
     .join("  |  ");
 
+  const ats = {
+    href: "/api/documents/resume",
+    label: "Single column (ATS)",
+    hint: "Upload this one to job portals — no tables, no images, parses cleanly.",
+  };
+  const design = {
+    href: "/api/documents/resume?variant=design",
+    label: resume.photoDataUrl === "" ? "Two column" : "Two column (with photo)",
+    hint: "For emailing a human. Has a sidebar, so do not upload it to an ATS.",
+  };
+  // The template chosen in the admin leads; the other stays one click away.
+  const downloads = resume.preferredVariant === "design" ? [design, ats] : [ats, design];
+
   return (
-    <DocumentChrome
-      title="Résumé"
-      downloads={[
-        {
-          href: "/api/documents/resume",
-          label: "Single column (ATS)",
-          hint: "Upload this one to job portals — no tables, no images, parses cleanly.",
-        },
-        {
-          href: "/api/documents/resume?variant=design",
-          label: "Two column (with photo)",
-          hint: "For emailing a human. Has a photo and sidebar, so do not upload it to an ATS.",
-        },
-      ]}
-    >
+    <DocumentChrome title="Résumé" downloads={downloads}>
       <p className="mb-6 rounded-xl border border-line bg-bg-violet px-4 py-3 text-[12.5px] leading-[1.6] text-body print:hidden">
         <strong className="text-ink">Two builds, one source.</strong> The preview
         below is the single-column version — upload that to job portals, where

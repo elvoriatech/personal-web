@@ -10,6 +10,7 @@ import {
 } from "./store";
 import { applyTemplateVars, recipientToVars } from "./templateVars";
 import { site } from "@/content/site";
+import type { EmailTheme } from "./themes";
 import type { CampaignTemplate, EmailTemplateType, Recipient } from "./types";
 
 export type BatchResult = {
@@ -41,6 +42,7 @@ export async function sendBatchToRecipients(params: {
   template: CampaignTemplate;
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
+  theme: EmailTheme;
   campaignId: string;
 }): Promise<BatchResult> {
   const result: BatchResult = {
@@ -87,6 +89,7 @@ export async function sendBatchToRecipients(params: {
     const html = wrapCampaignEmailHtml(plainTextToHtml(bodyText), {
       preheader: subject,
       showOptOut: true,
+      theme: params.theme,
     });
 
     // Throttle between individual sends rather than only between batches —

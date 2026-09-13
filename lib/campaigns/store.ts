@@ -1,5 +1,8 @@
 import "server-only";
 
+import { coerceEmailTheme, type EmailTheme } from "./themes";
+import type { RecipientInput } from "./types";
+
 import { getPool } from "@/lib/db/client";
 import { FOLLOW_UP_1_AFTER_DAYS, FOLLOW_UP_2_AFTER_DAYS } from "./constants";
 import type {
@@ -92,9 +95,16 @@ export async function listRecipients(opts: {
   offset?: number;
   status?: RecipientStatus | "all";
   search?: string;
+  /** Filter on the permanent opt-out flag, independent of send status. */
+  optedOut?: boolean;
 } = {}): Promise<{ rows: Recipient[]; total: number }> {
   const where: string[] = [];
   const values: unknown[] = [];
+
+  if (opts.optedOut !== undefined) {
+    values.push(opts.optedOut);
+    where.push(`opted_out = $${values.length}`);
+  }
 
   if (opts.status && opts.status !== "all") {
     values.push(opts.status);
@@ -148,13 +158,6 @@ export async function listRecipientIdsByStatus(status: RecipientStatus): Promise
   return rows.map((r) => r.id);
 }
 
-export type RecipientInput = {
-  email: string;
-  companyName?: string;
-  contactName?: string;
-  industry?: string;
-  notes?: string;
-};
 
 /** Inserts new addresses and updates details on existing ones, never resetting send state. */
 export async function upsertRecipients(
@@ -368,13 +371,28 @@ export async function createCampaign(params: {
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
   recipientCount: number;
+  theme: EmailTheme;
 }): Promise<string> {
   const { rows } = await db().query<{ id: string }>(
-    `INSERT INTO em_campaigns (template_type, auto_follow_up, recipient_count)
-     VALUES ($1, $2, $3) RETURNING id`,
-    [params.templateType, params.autoFollowUp, params.recipientCount]
+    `INSERT INTO em_campaigns (template_type, auto_follow_up, recipient_count, theme)
+     VALUES ($1, $2, $3, $4) RETURNING id`,
+    [params.templateType, params.autoFollowUp, params.recipientCount, coerceEmailTheme(params.theme)]
   );
   return rows[0].id;
+}
+
+/**
+ * Theme of the most recent campaign of a given stage — automatic follow-ups
+ * use it so a plain-letter thread does not suddenly turn into a branded card.
+ */
+export async function latestCampaignTheme(
+  templateType: EmailTemplateType
+): Promise<EmailTheme | null> {
+  const { rows } = await db().query<{ theme: string }>(
+    "SELECT theme FROM em_campaigns WHERE template_type = $1 ORDER BY created_at DESC LIMIT 1",
+    [templateType]
+  );
+  return rows[0] ? coerceEmailTheme(rows[0].theme) : null;
 }
 
 export async function appendSendLog(entry: {
@@ -450,3 +468,5 @@ export async function recipientStats(): Promise<Record<string, number>> {
   out.invalid_domain = Number(extra.rows[0]?.invalid ?? 0);
   return out;
 }
+
+export type { RecipientInput };

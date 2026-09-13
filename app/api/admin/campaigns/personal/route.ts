@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/campaigns/guard";
 import type { AttachmentId } from "@/lib/campaigns/attachments";
 import { sendPersonalEmail } from "@/lib/campaigns/personal";
+import { coerceEmailTheme } from "@/lib/campaigns/themes";
 
 export async function POST(request: Request) {
   const denied = await requireAdmin();
@@ -13,6 +14,7 @@ export async function POST(request: Request) {
       body?: string;
       attachments?: AttachmentId[];
       ccSelf?: boolean;
+      theme?: string;
     };
 
     const result = await sendPersonalEmail({
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
       body: body.body ?? "",
       attachments: body.attachments ?? [],
       ccSelf: body.ccSelf ?? true,
+      theme: coerceEmailTheme(body.theme),
     });
 
     return Response.json(result, { status: result.ok ? 200 : 400 });

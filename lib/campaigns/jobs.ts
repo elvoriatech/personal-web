@@ -11,6 +11,7 @@ import {
   listRecipientIdsByStatus,
   updateCampaignCounts,
 } from "./store";
+import { coerceEmailTheme, type EmailTheme } from "./themes";
 import type {
   EmailTemplateType,
   SendJob,
@@ -24,6 +25,7 @@ type JobRow = {
   status: SendJobStatus;
   template_type: EmailTemplateType;
   auto_follow_up: boolean;
+  theme: EmailTheme | null;
   selection_mode: SendJobSelectionMode;
   recipient_ids: string[];
   processed_index: number;
@@ -51,6 +53,7 @@ function mapJob(r: JobRow): SendJob {
     status: r.status,
     templateType: r.template_type,
     autoFollowUp: r.auto_follow_up,
+    theme: coerceEmailTheme(r.theme),
     selectionMode: r.selection_mode,
     totalCount: r.total_count,
     processedIndex: r.processed_index,
@@ -88,6 +91,7 @@ export async function getSendJob(id: string): Promise<SendJob | null> {
 export async function createSendJob(params: {
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
+  theme: EmailTheme;
   selectionMode: SendJobSelectionMode;
   recipientIds?: string[];
 }): Promise<SendJob> {
@@ -108,12 +112,13 @@ export async function createSendJob(params: {
     templateType: params.templateType,
     autoFollowUp: params.autoFollowUp,
     recipientCount: ids.length,
+    theme: params.theme,
   });
 
   const { rows } = await db().query<JobRow>(
     `INSERT INTO em_send_jobs
-       (campaign_id, status, template_type, auto_follow_up, selection_mode, recipient_ids, total_count)
-     VALUES ($1, 'queued', $2, $3, $4, $5::jsonb, $6)
+       (campaign_id, status, template_type, auto_follow_up, selection_mode, recipient_ids, total_count, theme)
+     VALUES ($1, 'queued', $2, $3, $4, $5::jsonb, $6, $7)
      RETURNING *`,
     [
       campaignId,
@@ -122,6 +127,7 @@ export async function createSendJob(params: {
       params.selectionMode,
       JSON.stringify(ids),
       ids.length,
+      coerceEmailTheme(params.theme),
     ]
   );
   return mapJob(rows[0]);
@@ -203,6 +209,7 @@ export async function processSendJobBatch(): Promise<ProcessResult> {
     template,
     templateType: job.templateType,
     autoFollowUp: job.autoFollowUp,
+    theme: job.theme,
     campaignId: job.campaignId,
   });
 

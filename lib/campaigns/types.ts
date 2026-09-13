@@ -1,3 +1,5 @@
+import type { EmailTheme } from "./themes";
+
 export type EmailTemplateType = "initial" | "follow_up_1" | "follow_up_2";
 
 export type RecipientStatus = "not_sent" | "sent" | "replied" | "bounced";
@@ -42,6 +44,15 @@ export type Recipient = {
   createdAt: string;
 };
 
+/** What the admin supplies when adding a recipient; everything but email is optional. */
+export type RecipientInput = {
+  email: string;
+  companyName?: string;
+  contactName?: string;
+  industry?: string;
+  notes?: string;
+};
+
 export type SendLogStatus =
   | "sent"
   | "failed"
@@ -58,6 +69,7 @@ export type SendJob = {
   status: SendJobStatus;
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
+  theme: EmailTheme;
   selectionMode: SendJobSelectionMode;
   totalCount: number;
   processedIndex: number;
@@ -73,6 +85,13 @@ export const TEMPLATE_LABELS: Record<EmailTemplateType, string> = {
   initial: "Initial outreach",
   follow_up_1: "Follow-up (3 days)",
   follow_up_2: "Final follow-up",
+};
+
+/** One line under each template name in the composer. */
+export const TEMPLATE_HINTS: Record<EmailTemplateType, string> = {
+  initial: "First contact — goes to people who have never been emailed.",
+  follow_up_1: "Three days after the first email, if nobody replied.",
+  follow_up_2: "Seven days after the first email. Closes the thread politely.",
 };
 
 export const TEMPLATE_TYPES: EmailTemplateType[] = [

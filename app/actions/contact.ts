@@ -5,7 +5,8 @@ import { Resend } from "resend";
 import { site } from "@/content/site";
 import { rateLimit } from "@/lib/rateLimit";
 import type { ContactState, ContactValues } from "@/lib/contactState";
-import { contactSchema, escapeHtml } from "@/lib/validation";
+import { contactSchema } from "@/lib/validation";
+import { buildContactNotification } from "@/lib/email/contactNotification";
 
 export async function submitContact(
   _prev: ContactState,
@@ -68,24 +69,16 @@ export async function submitContact(
 
   try {
     const resend = new Resend(apiKey);
+    const notification = buildContactNotification({ name, email, message });
     const { error } = await resend.emails.send({
       /* Resend requires a verified domain for a custom sender. Until one
          exists, onboarding@resend.dev delivers to the account owner. */
       from: process.env.CONTACT_FROM_EMAIL || "Portfolio <onboarding@resend.dev>",
       to: process.env.CONTACT_TO_EMAIL || site.email,
       replyTo: email,
-      subject: `New enquiry from ${name}`,
-      text: `From: ${name} <${email}>\n\n${message}`,
-      html: `
-        <div style="font-family:system-ui,sans-serif;line-height:1.6;color:#0c1218">
-          <h2 style="margin:0 0 12px">New enquiry via ${escapeHtml(site.url)}</h2>
-          <p style="margin:0 0 4px"><strong>Name:</strong> ${escapeHtml(name)}</p>
-          <p style="margin:0 0 16px"><strong>Email:</strong> ${escapeHtml(email)}</p>
-          <div style="padding:16px;background:#f3f1fe;border-radius:10px;white-space:pre-wrap">${escapeHtml(
-            message
-          )}</div>
-        </div>
-      `,
+      subject: notification.subject,
+      text: notification.text,
+      html: notification.html,
     });
 
     if (error) {

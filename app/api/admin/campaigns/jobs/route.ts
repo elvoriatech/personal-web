@@ -6,6 +6,7 @@ import {
   processSendJobBatch,
 } from "@/lib/campaigns/jobs";
 import { seedTemplatesIfMissing } from "@/lib/campaigns/seed";
+import { coerceEmailTheme, DEFAULT_CAMPAIGN_THEME } from "@/lib/campaigns/themes";
 import type { EmailTemplateType, SendJobSelectionMode } from "@/lib/campaigns/types";
 
 export async function GET() {
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
       jobId?: string;
       templateType?: EmailTemplateType;
       autoFollowUp?: boolean;
+      theme?: string;
       selectionMode?: SendJobSelectionMode;
       recipientIds?: string[];
     };
@@ -45,6 +47,7 @@ export async function POST(request: Request) {
     const job = await createSendJob({
       templateType: body.templateType ?? "initial",
       autoFollowUp: body.autoFollowUp ?? false,
+      theme: coerceEmailTheme(body.theme, DEFAULT_CAMPAIGN_THEME),
       selectionMode: body.selectionMode ?? "all_not_sent",
       recipientIds: body.recipientIds,
     });

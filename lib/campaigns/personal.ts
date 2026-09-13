@@ -10,6 +10,7 @@ import { plainTextToHtml, wrapCampaignEmailHtml } from "./emailLayout";
 import { formatSendError, sendHtmlEmail, type MailAttachment } from "./mailer";
 import { site } from "@/content/site";
 import { ATTACHMENT_OPTIONS, type AttachmentId } from "./attachments";
+import { DEFAULT_EMAIL_THEME, type EmailTheme } from "./themes";
 
 export { ATTACHMENT_OPTIONS };
 export type { AttachmentId };
@@ -53,6 +54,7 @@ export async function sendPersonalEmail(params: {
   body: string;
   attachments: AttachmentId[];
   ccSelf?: boolean;
+  theme?: EmailTheme;
 }): Promise<PersonalSendResult> {
   const to = params.to.trim();
   if (!to || !to.includes("@")) return { ok: false, error: "A valid recipient is required." };
@@ -72,6 +74,7 @@ export async function sendPersonalEmail(params: {
   const html = wrapCampaignEmailHtml(plainTextToHtml(params.body), {
     preheader: params.subject,
     showOptOut: false,
+    theme: params.theme ?? DEFAULT_EMAIL_THEME,
   });
 
   const res = await sendHtmlEmail({

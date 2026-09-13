@@ -1,10 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSignedIn } from "@/lib/auth";
-import { isCampaignsConfigured, listRecipients, recipientStats } from "@/lib/campaigns/store";
+import { RECIPIENTS_PAGE_SIZE } from "@/lib/campaigns/constants";
 import { getActiveSendJob } from "@/lib/campaigns/jobs";
-import type { Recipient, SendJob } from "@/lib/campaigns/types";
 import { mailerMode } from "@/lib/campaigns/mailer";
+import { seedTemplatesIfMissing } from "@/lib/campaigns/seed";
+import {
+  isCampaignsConfigured,
+  listRecipients,
+  listTemplates,
+  recipientStats,
+} from "@/lib/campaigns/store";
+import type { CampaignTemplate, Recipient, SendJob } from "@/lib/campaigns/types";
 import { CampaignsPanel } from "./CampaignsPanel";
 
 export const dynamic = "force-dynamic";
@@ -17,19 +24,23 @@ export default async function AdminCampaignsPage() {
 
   // Loaded here rather than in a mount effect, so the first paint already has
   // the data and React is not asked to cascade a render on mount.
-  let rows: Recipient[] = [];
+  let page: { rows: Recipient[]; total: number } = { rows: [], total: 0 };
   let stats: Record<string, number> = {};
   let job: SendJob | null = null;
+  let templates: CampaignTemplate[] = [];
   if (configured) {
     try {
-      const [page, s, j] = await Promise.all([
-        listRecipients({ limit: 200 }),
+      await seedTemplatesIfMissing();
+      const [p, s, j, t] = await Promise.all([
+        listRecipients({ limit: RECIPIENTS_PAGE_SIZE, offset: 0 }),
         recipientStats(),
         getActiveSendJob(),
+        listTemplates(),
       ]);
-      rows = page.rows;
+      page = p;
       stats = s;
       job = j;
+      templates = t;
     } catch (err) {
       // A missing schema must not blank the page; the panel shows the error.
       console.error("[admin] campaigns load failed:", err);
@@ -44,13 +55,13 @@ export default async function AdminCampaignsPage() {
           href="/admin/campaigns/templates"
           className="inline-flex min-h-[38px] items-center rounded-pill border border-line px-4 text-[12px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          Edit templates
+          Edit email templates
         </Link>
       </div>
       <p className="mt-1.5 max-w-[72ch] text-[13.5px] text-body">
-        Import prospects, audit their domains, then send in batches. Sending is
-        throttled and resumable — progress is stored per recipient, so a timeout
-        never double-sends.
+        Add the companies you want to reach, check their domains, pick an email and a look,
+        then send in batches. Sending is throttled and resumable — progress is stored per
+        recipient, so a timeout never double-sends.
       </p>
 
       {mode === "unconfigured" && (
@@ -71,9 +82,10 @@ export default async function AdminCampaignsPage() {
       <div className="mt-7">
         <CampaignsPanel
           configured={configured}
-          initialRows={rows}
+          initialPage={page}
           initialStats={stats}
           initialJob={job}
+          templates={templates}
         />
       </div>
     </div>

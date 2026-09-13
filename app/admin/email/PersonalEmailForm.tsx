@@ -1,51 +1,73 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { EmailPreviewDialog } from "@/components/admin/EmailPreviewDialog";
 import { Card, Field, SmallButton, TextArea } from "@/components/admin/Fields";
+import { ThemePicker } from "@/components/admin/ThemePicker";
 import { ATTACHMENT_OPTIONS, type AttachmentId } from "@/lib/campaigns/attachments";
+import { DEFAULT_EMAIL_THEME, type EmailTheme } from "@/lib/campaigns/themes";
 
-export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
+const SAMPLE_BODY =
+  "Hi there,\n\nThis is how your message will look. Write your email in the box on the left and open the preview again.\n\nBest regards,\nZahoor Ahmed";
+
+export function PersonalEmailForm({
+  mailReady,
+  defaultAttachment = "resume_ats",
+}: {
+  mailReady: boolean;
+  /** Follows the template chosen in the résumé admin. */
+  defaultAttachment?: AttachmentId;
+}) {
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
-  const [attachments, setAttachments] = useState<AttachmentId[]>(["resume_ats"]);
+  const [theme, setTheme] = useState<EmailTheme>(DEFAULT_EMAIL_THEME);
+  const [attachments, setAttachments] = useState<AttachmentId[]>([defaultAttachment]);
   const [ccSelf, setCcSelf] = useState(true);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [checking, setChecking] = useState(false);
   const [check, setCheck] = useState<{ ok: boolean; text: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function testConnection() {
     setChecking(true);
     setCheck(null);
     try {
       const res = await fetch("/api/admin/campaigns/verify", { method: "POST" });
-      const data = (await res.json()) as {
-        ok: boolean;
-        detail: string;
-        mode: string;
-        from: string;
-      };
+      const data = (await res.json()) as { ok: boolean; detail: string; mode: string; from: string };
       setCheck({
         ok: data.ok,
-        text: data.ok
-          ? `${data.mode.toUpperCase()} OK — sending as ${data.from}`
-          : data.detail,
+        text: data.ok ? `${data.mode.toUpperCase()} OK — sending as ${data.from}` : data.detail,
       });
     } catch (err) {
-      setCheck({
-        ok: false,
-        text: err instanceof Error ? err.message : "Could not reach the server.",
-      });
+      setCheck({ ok: false, text: err instanceof Error ? err.message : "Could not reach the server." });
     } finally {
       setChecking(false);
     }
   }
 
   const toggle = (id: AttachmentId) =>
-    setAttachments((prev) =>
-      prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]
-    );
+    setAttachments((prev) => (prev.includes(id) ? prev.filter((a) => a !== id) : [...prev, id]));
+
+  // Personal mail has no opt-out line, so the preview asks for none either.
+  const loadPreview = useCallback(
+    async (t: EmailTheme) => {
+      const res = await fetch("/api/admin/campaigns/preview", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subject: subject || "Your subject line",
+          bodyHtml: body.trim() || SAMPLE_BODY,
+          theme: t,
+          showOptOut: false,
+        }),
+      });
+      if (!res.ok) throw new Error(`Preview failed (${res.status})`);
+      return res.text();
+    },
+    [subject, body]
+  );
 
   async function send() {
     setSending(true);
@@ -54,18 +76,14 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
       const res = await fetch("/api/admin/campaigns/personal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject, body, attachments, ccSelf }),
+        body: JSON.stringify({ to, subject, body, attachments, ccSelf, theme }),
       });
-      const data = (await res.json()) as
-        | { ok: true; attached: string[] }
-        | { ok: false; error: string };
+      const data = (await res.json()) as { ok: true; attached: string[] } | { ok: false; error: string };
 
       if (data.ok) {
         setResult({
           ok: true,
-          text: data.attached.length
-            ? `Sent to ${to} with ${data.attached.join(", ")}.`
-            : `Sent to ${to}.`,
+          text: data.attached.length ? `Sent to ${to} with ${data.attached.join(", ")}.` : `Sent to ${to}.`,
         });
         setTo("");
         setSubject("");
@@ -74,10 +92,7 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
         setResult({ ok: false, text: data.error });
       }
     } catch (err) {
-      setResult({
-        ok: false,
-        text: err instanceof Error ? err.message : "Could not send.",
-      });
+      setResult({ ok: false, text: err instanceof Error ? err.message : "Could not send." });
     } finally {
       setSending(false);
     }
@@ -95,13 +110,11 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
       <Card
         title="Compose"
         action={
-          <div className="flex gap-2">
-            <SmallButton onClick={testConnection}>
+          <div className="flex flex-wrap gap-2">
+            <SmallButton onClick={testConnection} disabled={checking}>
               {checking ? "Testing…" : "Test connection"}
             </SmallButton>
-            <SmallButton onClick={() => window.open("/resume", "_blank")}>
-              Preview résumé
-            </SmallButton>
+            <SmallButton onClick={() => setPreviewOpen(true)}>Preview email</SmallButton>
           </div>
         }
       >
@@ -124,14 +137,15 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
           rows={12}
           value={body}
           onChange={setBody}
-          hint='Plain text. Blank line between paragraphs; "- " for a bullet. It is wrapped in your branded email template on send.'
+          hint='Plain text. Blank line between paragraphs; "- " starts a bullet. Your signature block is added by the theme, so end with your name only.'
         />
+        <ThemePicker value={theme} onChange={setTheme} />
       </Card>
 
       <Card title="Attachments">
         <p className="text-[12.5px] text-body">
-          Documents are generated fresh at send time, so they always match what is
-          currently in the admin.
+          Documents are generated fresh at send time, so they always match what is currently
+          in the admin.
         </p>
         <ul className="space-y-2.5">
           {ATTACHMENT_OPTIONS.map((option) => (
@@ -141,7 +155,7 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
                   type="checkbox"
                   checked={attachments.includes(option.id)}
                   onChange={() => toggle(option.id)}
-                  className="h-4 w-4"
+                  className="h-4 w-4 accent-[var(--accent)]"
                 />
                 {option.label}
                 <span className="text-[11.5px] text-muted">({option.filename})</span>
@@ -154,7 +168,7 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
             type="checkbox"
             checked={ccSelf}
             onChange={(e) => setCcSelf(e.target.checked)}
-            className="h-4 w-4"
+            className="h-4 w-4 accent-[var(--accent)]"
           />
           Blind-copy myself
         </label>
@@ -170,14 +184,19 @@ export function PersonalEmailForm({ mailReady }: { mailReady: boolean }) {
           {sending ? "Sending…" : "Send email"}
         </button>
         {result && (
-          <p
-            role="status"
-            className={`text-[13px] ${result.ok ? "text-green-700" : "text-red-600"}`}
-          >
+          <p role="status" className={`text-[13px] ${result.ok ? "text-green-700" : "text-red-600"}`}>
             {result.text}
           </p>
         )}
       </div>
+
+      <EmailPreviewDialog
+        open={previewOpen}
+        title={subject || "Personal email"}
+        theme={theme}
+        onClose={() => setPreviewOpen(false)}
+        load={loadPreview}
+      />
     </div>
   );
 }

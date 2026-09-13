@@ -23,6 +23,7 @@ export const defaultDocuments: DocumentBundle = {
     // left blank they are omitted rather than printed as dead labels.
     linkedin: "",
     github: "",
+    preferredVariant: "ats",
     summary:
       "Senior Software Engineer and AI/LLM Engineer with 8+ years of experience building scalable enterprise applications, microservices and cloud-native systems across fleet telematics, e-commerce and airline technology. Experienced with TypeScript, Node.js, Python, AWS and Kubernetes, with a hands-on focus on Generative AI, Retrieval-Augmented Generation (RAG), LLM applications, AI agents and vector-based retrieval. Designs production-ready APIs, distributed systems and AI workflows using LangChain, LangGraph, OpenAI and AWS Bedrock, working in Agile and Scrum teams with test-driven development.",
     skills: [

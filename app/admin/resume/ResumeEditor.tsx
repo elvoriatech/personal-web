@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { saveResume, type SaveState } from "../actions";
 import { Card, Field, SaveBar, SmallButton, TextArea } from "@/components/admin/Fields";
 import type { ResumeDoc } from "@/lib/documents/types";
+import { PresentationCard } from "./PresentationCard";
 
 const emptyRole = {
   title: "",
@@ -39,6 +40,22 @@ export function ResumeEditor({
       <input type="hidden" name="payload" value={JSON.stringify(doc)} />
 
       <div className="space-y-5">
+        <PresentationCard
+          variant={doc.preferredVariant ?? "ats"}
+          photoDataUrl={doc.photoDataUrl}
+          onVariant={(v) => set("preferredVariant", v)}
+          onPhoto={(dataUrl) =>
+            setDoc((d) => {
+              // undefined means "back to the bundled portrait": drop the key
+              // rather than store undefined, which JSON would silently do anyway.
+              const next = { ...d };
+              if (dataUrl === undefined) delete next.photoDataUrl;
+              else next.photoDataUrl = dataUrl;
+              return next;
+            })
+          }
+        />
+
         <Card title="Header">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Full name" value={doc.fullName} onChange={(v) => set("fullName", v)} />

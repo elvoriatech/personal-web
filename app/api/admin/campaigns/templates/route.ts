@@ -1,4 +1,5 @@
 import { requireAdmin } from "@/lib/campaigns/guard";
+import { DEFAULT_TEMPLATES } from "@/lib/campaigns/defaults";
 import { seedTemplatesIfMissing } from "@/lib/campaigns/seed";
 import { listTemplates, saveTemplate } from "@/lib/campaigns/store";
 import type { EmailTemplateType } from "@/lib/campaigns/types";
@@ -8,7 +9,8 @@ export async function GET() {
   if (denied) return denied;
   try {
     await seedTemplatesIfMissing();
-    return Response.json({ templates: await listTemplates() });
+    // Defaults ride along so the editor can offer "Restore default" offline.
+    return Response.json({ templates: await listTemplates(), defaults: DEFAULT_TEMPLATES });
   } catch (err) {
     return Response.json({ error: message(err) }, { status: 400 });
   }

@@ -1,7 +1,11 @@
 import { requireCronSecret } from "@/lib/campaigns/guard";
 import { createSendJob, getActiveSendJob, processSendJobBatch } from "@/lib/campaigns/jobs";
-import { listRecipientsForAutoFollowUp } from "@/lib/campaigns/store";
-import { isCampaignsConfigured } from "@/lib/campaigns/store";
+import {
+  isCampaignsConfigured,
+  latestCampaignTheme,
+  listRecipientsForAutoFollowUp,
+} from "@/lib/campaigns/store";
+import { DEFAULT_CAMPAIGN_THEME } from "@/lib/campaigns/themes";
 
 export const maxDuration = 60;
 
@@ -41,6 +45,9 @@ export async function GET(request: Request) {
     if (!(await getActiveSendJob())) {
       const due = await listRecipientsForAutoFollowUp();
       queuedFollowUps = { followUp1: 0, followUp2: 0 };
+      // Follow-ups inherit the look of the initial send, so a plain-letter
+      // thread does not suddenly turn into a branded card.
+      const theme = (await latestCampaignTheme("initial")) ?? DEFAULT_CAMPAIGN_THEME;
 
       // Only one job can run at a time, so queue the earlier stage first and
       // let the next tick pick up the other.
@@ -48,6 +55,7 @@ export async function GET(request: Request) {
         await createSendJob({
           templateType: "follow_up_1",
           autoFollowUp: true,
+          theme,
           selectionMode: "recipient_ids",
           recipientIds: due.followUp1,
         });
@@ -56,6 +64,7 @@ export async function GET(request: Request) {
         await createSendJob({
           templateType: "follow_up_2",
           autoFollowUp: false,
+          theme,
           selectionMode: "recipient_ids",
           recipientIds: due.followUp2,
         });

@@ -10,8 +10,9 @@ export const SEND_DELAY_MS = 900;
 /** Client poll interval while a job is running. */
 export const SEND_JOB_POLL_MS = 3000;
 
-/** Admin list page size. */
-export const RECIPIENTS_PAGE_SIZE = 200;
+/** Admin list page size, and the sizes the table offers. */
+export const RECIPIENTS_PAGE_SIZE = 25;
+export const RECIPIENTS_PAGE_SIZES = [25, 50, 100] as const;
 
 /** Days after the initial send before follow-up 1 / 2 become due. */
 export const FOLLOW_UP_1_AFTER_DAYS = 3;
