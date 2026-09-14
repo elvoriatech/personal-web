@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { DownloadCurrentButton } from "@/components/admin/DownloadCurrentButton";
 import { ResumeSheet } from "@/components/documents/ResumeSheet";
 import type { ResumeDoc, ResumeVariant } from "@/lib/documents/types";
 
@@ -11,8 +12,7 @@ const LABEL: Record<ResumeVariant, string> = {
 
 /**
  * Shows the résumé as it currently is in the editor — unsaved edits included —
- * in either template. Downloads, by contrast, are built from the last saved
- * copy, which the footer says plainly so nobody is surprised.
+ * in either template, and downloads a .docx built from that same state.
  */
 export function ResumePreviewDialog({
   open,
@@ -87,12 +87,9 @@ export function ResumePreviewDialog({
                 </button>
               ))}
             </div>
-            <a
-              href={`/api/documents/resume?variant=${variant}`}
-              className="inline-flex min-h-[34px] items-center rounded-pill border border-accent bg-accent px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-white hover:bg-accent-deep"
-            >
-              Download .docx
-            </a>
+            <DownloadCurrentButton doc="resume" payload={resume} variant={variant}>
+              Download this version
+            </DownloadCurrentButton>
             <button
               type="button"
               onClick={close}
@@ -119,9 +116,9 @@ export function ResumePreviewDialog({
         </div>
 
         <footer className="border-t border-line px-5 py-2.5 text-[11.5px] text-muted">
-          The preview shows what is in the editor right now. Downloads are built from the last
-          saved version{dirty ? " — save first to include these edits" : ""}. Word uses Calibri, so
-          line breaks will differ slightly.
+          The preview and the download both use what is in the editor right now
+          {dirty ? " (including unsaved edits)" : ""}. Word uses Calibri, so line breaks will differ
+          slightly.
         </footer>
       </div>
     </dialog>
