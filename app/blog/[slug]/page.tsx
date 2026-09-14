@@ -4,7 +4,8 @@ import type { Metadata } from "next";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { getPost, listPosts } from "@/lib/blog/store";
-import { readingMinutes, renderPostBody } from "@/lib/blog/types";
+import { postBodyHtml, postPlainText } from "@/lib/blog/html";
+import { readingMinutes } from "@/lib/blog/types";
 import { site } from "@/content/site";
 
 export const revalidate = 300;
@@ -22,16 +23,18 @@ export async function generateMetadata({
   const post = await getPost(slug);
   if (!post || post.draft) return { title: "Post not found" };
 
+  const description = post.excerpt || postPlainText(post.body).slice(0, 160);
   return {
     title: post.title,
-    description: post.excerpt,
+    description,
     alternates: { canonical: `/blog/${post.slug}` },
     openGraph: {
       type: "article",
       title: post.title,
-      description: post.excerpt,
+      description,
       publishedTime: post.publishedAt,
       url: `${site.url}/blog/${post.slug}`,
+      ...(post.coverImage ? { images: [{ url: absolute(post.coverImage) }] } : {}),
     },
   };
 }
@@ -45,7 +48,7 @@ export default async function BlogPostPage({
   const post = await getPost(slug);
   if (!post || post.draft) notFound();
 
-  const blocks = renderPostBody(post.body);
+  const html = postBodyHtml(post.body);
   const published = new Date(`${post.publishedAt}T00:00:00Z`).toLocaleDateString(
     "en-GB",
     { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }
@@ -59,6 +62,7 @@ export default async function BlogPostPage({
     datePublished: post.publishedAt,
     author: { "@type": "Person", name: site.name, url: site.url },
     mainEntityOfPage: `${site.url}/blog/${post.slug}`,
+    ...(post.coverImage ? { image: absolute(post.coverImage) } : {}),
   };
 
   return (
@@ -81,30 +85,20 @@ export default async function BlogPostPage({
               {post.title}
             </h1>
 
-            <div className="mt-8 space-y-5 text-[15.5px] leading-[1.75] text-body">
-              {blocks.map((block, i) => {
-                if (block.kind === "heading") {
-                  return (
-                    <h2
-                      key={i}
-                      className="pt-3 font-display text-[20px] font-semibold text-ink"
-                    >
-                      {block.text}
-                    </h2>
-                  );
-                }
-                if (block.kind === "list") {
-                  return (
-                    <ul key={i} className="list-disc space-y-1.5 pl-6">
-                      {block.items.map((item, j) => (
-                        <li key={j}>{item}</li>
-                      ))}
-                    </ul>
-                  );
-                }
-                return <p key={i}>{block.text}</p>;
-              })}
-            </div>
+            {post.coverImage && (
+              // eslint-disable-next-line @next/next/no-img-element -- author-supplied image of unknown size, served from our own cached route
+              <img
+                src={post.coverImage}
+                alt=""
+                className="mt-8 aspect-[16/9] w-full rounded-card border border-line object-cover"
+              />
+            )}
+
+            {/* Sanitised twice — on save and here — so stored HTML can never carry a script. */}
+            <div
+              className="post-body mt-8 text-[15.5px] leading-[1.75]"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
 
             {post.tags.length > 0 && (
               <ul className="mt-10 flex flex-wrap gap-1.5 border-t border-line pt-6">
@@ -130,4 +124,9 @@ export default async function BlogPostPage({
       />
     </>
   );
+}
+
+/** Absolute URL for Open Graph and JSON-LD, which cannot use a relative path. */
+function absolute(url: string): string {
+  return url.startsWith("/") ? `${site.url}${url}` : url;
 }

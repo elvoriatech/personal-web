@@ -2,8 +2,14 @@ export type BlogPost = {
   slug: string;
   title: string;
   excerpt: string;
-  /** Plain text with a deliberately tiny markup subset — see renderPostBody. */
+  /**
+   * HTML from the editor, sanitised on save and on render (lib/blog/html.ts).
+   * Posts written before the editor used a tiny plain-text markup; see
+   * renderPostBody, which now only serves to convert those.
+   */
   body: string;
+  /** URL of an optional cover image ("" when none). */
+  coverImage: string;
   tags: string[];
   /** ISO date (YYYY-MM-DD). */
   publishedAt: string;
@@ -80,6 +86,6 @@ export function slugify(title: string): string {
 }
 
 export function readingMinutes(body: string): number {
-  const words = body.split(/\s+/).filter(Boolean).length;
+  const words = body.replace(/<[^>]+>/g, " ").split(/\s+/).filter(Boolean).length;
   return Math.max(1, Math.round(words / 200));
 }

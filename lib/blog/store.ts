@@ -12,6 +12,7 @@ type Row = {
   title: string;
   excerpt: string;
   body: string;
+  cover_image: string | null;
   tags: string[];
   published_at: Date | string;
   draft: boolean;
@@ -23,6 +24,7 @@ function fromRow(r: Row): BlogPost {
     title: r.title,
     excerpt: r.excerpt,
     body: r.body,
+    coverImage: r.cover_image ?? "",
     tags: r.tags ?? [],
     publishedAt:
       typeof r.published_at === "string"
@@ -34,7 +36,8 @@ function fromRow(r: Row): BlogPost {
 
 async function readLocal(): Promise<BlogPost[]> {
   try {
-    return JSON.parse(await readFile(LOCAL_FILE, "utf8")) as BlogPost[];
+    const posts = JSON.parse(await readFile(LOCAL_FILE, "utf8")) as Partial<BlogPost>[];
+    return posts.map((p) => ({ coverImage: "", ...p }) as BlogPost);
   } catch {
     return [];
   }
@@ -56,7 +59,7 @@ export async function listPosts({
   if (pool) {
     try {
       const { rows } = await pool.query<Row>(
-        `SELECT slug, title, excerpt, body, tags, published_at, draft
+        `SELECT slug, title, excerpt, body, cover_image, tags, published_at, draft
            FROM blog_posts
           ${includeDrafts ? "" : "WHERE draft = FALSE"}
           ORDER BY published_at DESC, slug`
@@ -78,7 +81,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
   if (pool) {
     try {
       const { rows } = await pool.query<Row>(
-        `SELECT slug, title, excerpt, body, tags, published_at, draft
+        `SELECT slug, title, excerpt, body, cover_image, tags, published_at, draft
            FROM blog_posts WHERE slug = $1`,
         [slug]
       );
@@ -97,17 +100,18 @@ export async function upsertPost(post: BlogPost): Promise<void> {
 
   if (pool) {
     await pool.query(
-      `INSERT INTO blog_posts (slug, title, excerpt, body, tags, published_at, draft, updated_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, now())
+      `INSERT INTO blog_posts (slug, title, excerpt, body, cover_image, tags, published_at, draft, updated_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, now())
        ON CONFLICT (slug) DO UPDATE SET
          title = EXCLUDED.title,
          excerpt = EXCLUDED.excerpt,
          body = EXCLUDED.body,
+         cover_image = EXCLUDED.cover_image,
          tags = EXCLUDED.tags,
          published_at = EXCLUDED.published_at,
          draft = EXCLUDED.draft,
          updated_at = now()`,
-      [post.slug, post.title, post.excerpt, post.body, post.tags, post.publishedAt, post.draft]
+      [post.slug, post.title, post.excerpt, post.body, post.coverImage, post.tags, post.publishedAt, post.draft]
     );
     return;
   }

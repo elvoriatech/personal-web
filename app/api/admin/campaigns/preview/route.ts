@@ -5,6 +5,7 @@ import { seedTemplatesIfMissing } from "@/lib/campaigns/seed";
 import { applyTemplateVars } from "@/lib/campaigns/templateVars";
 import { coerceEmailTheme, DEFAULT_CAMPAIGN_THEME, type EmailTheme } from "@/lib/campaigns/themes";
 import { TEMPLATE_TYPES, type EmailTemplateType } from "@/lib/campaigns/types";
+import { fillPlaceholders } from "@/lib/documents/types";
 
 const SAMPLE_VARS = { firstName: "Lena", companyName: "Nordlicht Logistik GmbH", industry: "logistics" };
 
@@ -13,7 +14,9 @@ const SAMPLE_VARS = { firstName: "Lena", companyName: "Nordlicht Logistik GmbH",
  * options — so what the admin approves in the preview is what goes out.
  *
  *   GET  /api/admin/campaigns/preview?template=initial&theme=plain
- *   POST { subject, bodyHtml, theme }   — preview unsaved edits from the editor
+ *   POST { subject, bodyHtml, theme, showOptOut?, vars? }
+ *        — preview unsaved edits from an editor. `vars` fills any extra
+ *          {{placeholders}} (the personal outreach templates use several).
  */
 export async function GET(request: Request) {
   const denied = await requireAdmin();
@@ -43,9 +46,29 @@ export async function POST(request: Request) {
     theme?: string;
     /** Personal emails have no opt-out line; campaigns always do. */
     showOptOut?: boolean;
+    /** Sample values for placeholders beyond firstName/company/industry. */
+    vars?: Record<string, string>;
   };
   const theme = coerceEmailTheme(body.theme, DEFAULT_CAMPAIGN_THEME);
-  return html(render(body.subject ?? "", body.bodyHtml ?? "", theme, body.showOptOut ?? true));
+  const extra = sanitizeVars(body.vars);
+  return html(
+    render(
+      fillPlaceholders(body.subject ?? "", extra),
+      fillPlaceholders(body.bodyHtml ?? "", extra),
+      theme,
+      body.showOptOut ?? true
+    )
+  );
+}
+
+/** Only short string values under simple keys; this is admin-supplied but still untrusted input. */
+function sanitizeVars(vars: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!vars || typeof vars !== "object") return out;
+  for (const [key, value] of Object.entries(vars as Record<string, unknown>)) {
+    if (/^\w{1,40}$/.test(key) && typeof value === "string") out[key] = value.slice(0, 300);
+  }
+  return out;
 }
 
 function render(subject: string, bodyText: string, theme: EmailTheme, showOptOut = true): string {

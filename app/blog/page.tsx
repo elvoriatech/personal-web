@@ -50,8 +50,18 @@ export default async function BlogIndex() {
                 <li key={post.slug}>
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="card-surface block p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40"
+                    className="card-surface flex flex-col gap-5 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-accent/40 sm:flex-row"
                   >
+                    {post.coverImage && (
+                      // eslint-disable-next-line @next/next/no-img-element -- author-supplied image from our cached route
+                      <img
+                        src={post.coverImage}
+                        alt=""
+                        loading="lazy"
+                        className="aspect-[16/10] w-full shrink-0 rounded-xl border border-line object-cover sm:w-[220px]"
+                      />
+                    )}
+                    <div className="min-w-0">
                     <p className="text-[12px] text-muted">
                       {formatDate(post.publishedAt)} · {readingMinutes(post.body)} min read
                     </p>
@@ -75,6 +85,7 @@ export default async function BlogIndex() {
                         ))}
                       </ul>
                     )}
+                    </div>
                   </Link>
                 </li>
               ))}

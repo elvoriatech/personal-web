@@ -32,6 +32,24 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 CREATE INDEX IF NOT EXISTS blog_posts_published_idx
   ON blog_posts (draft, published_at DESC);
 
+-- Optional cover image for the index card and Open Graph; a URL served by
+-- /api/blog/images/<id> or any https URL.
+ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS cover_image TEXT NOT NULL DEFAULT '';
+
+-- Images uploaded from the post editor. Stored in Postgres because the Vercel
+-- filesystem is read-only; each is resized to at most 1600px and re-encoded as
+-- WebP before it lands here, and the id is a hash of those bytes so the public
+-- URL can be cached forever.
+CREATE TABLE IF NOT EXISTS blog_images (
+  id            TEXT PRIMARY KEY,
+  data          BYTEA NOT NULL,
+  content_type  TEXT NOT NULL,
+  width         INT NOT NULL,
+  height        INT NOT NULL,
+  bytes         INT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- ===========================================================================
 -- Email campaigns
 -- ===========================================================================

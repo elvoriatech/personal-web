@@ -140,6 +140,7 @@ export async function savePost(
 ): Promise<SaveState> {
   const { upsertPost } = await import("@/lib/blog/store");
   const { slugify } = await import("@/lib/blog/types");
+  const { sanitizePostHtml } = await import("@/lib/blog/html");
 
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return { status: "error", message: "A title is required." };
@@ -154,7 +155,9 @@ export async function savePost(
       slug,
       title,
       excerpt: String(formData.get("excerpt") ?? "").trim(),
-      body: String(formData.get("body") ?? ""),
+      // Allowlisted on the way in as well as on render.
+      body: sanitizePostHtml(String(formData.get("body") ?? "")),
+      coverImage: coverImageUrl(String(formData.get("coverImage") ?? "")),
       tags: String(formData.get("tags") ?? "")
         .split(",")
         .map((t) => t.trim())
@@ -173,6 +176,12 @@ export async function savePost(
       message: err instanceof Error ? err.message : "Could not save the post.",
     };
   }
+}
+
+/** Only our own uploads or an https URL may be used as a cover. */
+function coverImageUrl(raw: string): string {
+  const value = raw.trim();
+  return /^\/api\/blog\/images\/[a-f0-9]{16,64}$/.test(value) || /^https:\/\/[^\s"'<>]+$/.test(value) ? value : "";
 }
 
 export async function removePost(formData: FormData): Promise<void> {

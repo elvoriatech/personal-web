@@ -183,3 +183,79 @@
     text-decoration: none !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Blog post bodies (public page and the admin editor share these), plus the
+   Tiptap editor chrome. Kept out of @layer so the sanitised HTML — which
+   carries no classes — is styled by element.
+--------------------------------------------------------------------------- */
+.post-body { color: var(--body-text); overflow-wrap: anywhere; }
+.post-body > :first-child { margin-top: 0; }
+.post-body p { margin: 0 0 1.1em; }
+.post-body h2,
+.post-body h3 {
+  font-family: var(--font-display, inherit);
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.3;
+  margin: 1.7em 0 0.55em;
+}
+.post-body h2 { font-size: 1.3em; }
+.post-body h3 { font-size: 1.12em; }
+.post-body ul, .post-body ol { margin: 0 0 1.1em; padding-left: 1.5em; }
+.post-body ul { list-style: disc; }
+.post-body ol { list-style: decimal; }
+.post-body li { margin: 0.3em 0; }
+.post-body li > p { margin: 0; }
+.post-body blockquote {
+  margin: 1.3em 0;
+  padding: 0.2em 0 0.2em 1.1em;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+  font-style: italic;
+}
+.post-body blockquote p { margin: 0; }
+.post-body pre {
+  margin: 1.3em 0;
+  padding: 1em 1.2em;
+  border-radius: 12px;
+  background: var(--ink);
+  color: #f5f3ff;
+  font-size: 0.86em;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+.post-body pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+.post-body code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9em;
+  background: var(--bg-tint);
+  color: var(--ink);
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+}
+.post-body a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; }
+.post-body a:hover { color: var(--accent-strong); }
+.post-body img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 1.5em auto;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--line);
+}
+.post-body figcaption { text-align: center; font-size: 0.85em; color: var(--muted); margin-top: -1em; margin-bottom: 1.5em; }
+.post-body hr { border: 0; border-top: 1px solid var(--line); margin: 2em 0; }
+.post-body mark { background: var(--bg-violet); color: inherit; padding: 0 0.15em; border-radius: 3px; }
+
+/* Editor-only affordances. */
+.tiptap-editor { font-size: 15px; line-height: 1.7; }
+.tiptap-editor p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--muted);
+  pointer-events: none;
+}
+.tiptap-editor img.ProseMirror-selectednode { outline: 3px solid var(--accent); outline-offset: 2px; }
+.tiptap-editor .ProseMirror-gapcursor:after { border-top-color: var(--accent); }

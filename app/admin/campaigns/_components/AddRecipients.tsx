@@ -81,7 +81,9 @@ function headerMap(cells: string[]): Partial<Record<Column, number>> | null {
   return map.email !== undefined ? map : null;
 }
 
-export function parseRecipientList(text: string): { rows: ParsedRow[]; columns: string; hadHeader: boolean } {
+export function parseRecipientList(input: string): { rows: ParsedRow[]; columns: string; hadHeader: boolean } {
+  // Excel writes a byte-order mark; left in, it would glue itself to the first header cell.
+  const text = input.replace(/^\uFEFF/, "");
   const delimiter = detectDelimiter(text);
   const table = parseCsv(text, delimiter);
   if (!table.length) return { rows: [], columns: "", hadHeader: false };
@@ -344,7 +346,15 @@ function BulkImport({
           <p className="mt-1 text-[11.5px] text-muted">
             One company per line. Comma, semicolon or tab separated. A header row like
             <code className="mx-1 rounded bg-bg-tint px-1">email, company, name, industry</code>
-            is detected and used for the column order.
+            is detected and used for the column order.{" "}
+            <a
+              href="/samples/companies-sample.csv"
+              download
+              className="font-semibold text-accent-deep underline-offset-2 hover:underline"
+            >
+              Download the sample CSV
+            </a>{" "}
+            — open it in Excel or Google Sheets, replace the rows, save as CSV, upload.
           </p>
         </div>
         <div>

@@ -2,8 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { isSignedIn } from "@/lib/auth";
 import { canPersist } from "@/lib/documents/store";
-import { listPosts } from "@/lib/blog/store";
-import { getPost } from "@/lib/blog/store";
+import { getPost, listPosts } from "@/lib/blog/store";
+import { postBodyHtml } from "@/lib/blog/html";
 import { removePost } from "../actions";
 import { PostEditor } from "./PostEditor";
 
@@ -18,7 +18,9 @@ export default async function AdminBlogPage({
 
   const { edit } = await searchParams;
   const posts = await listPosts({ includeDrafts: true });
-  const editing = edit ? await getPost(edit) : undefined;
+  const found = edit ? await getPost(edit) : null;
+  // Older posts are plain text; the editor works in HTML.
+  const editing = found ? { ...found, body: postBodyHtml(found.body) } : undefined;
 
   return (
     <div>
@@ -34,7 +36,8 @@ export default async function AdminBlogPage({
         )}
       </div>
       <p className="mt-1.5 text-[13.5px] text-body">
-        Write a post, leave it as a draft, or publish it. Published posts appear at{" "}
+        Write with headings, lists, quotes, code and images — drop or paste pictures straight
+        into the text. Leave a post as a draft or publish it; published posts appear at{" "}
         <Link href="/blog" className="text-accent-deep">/blog</Link>.
       </p>
 
