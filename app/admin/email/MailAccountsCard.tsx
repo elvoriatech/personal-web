@@ -9,11 +9,11 @@ import { disconnectMicrosoftAction } from "../actions";
  */
 export function MailAccountsCard({
   mail,
-  redirectUri,
+  redirectUris,
   notice,
 }: {
   mail: MailStatus;
-  redirectUri: string;
+  redirectUris: string[];
   notice: { tone: "ok" | "error"; text: string } | null;
 }) {
   const ms = mail.microsoft;
@@ -68,8 +68,14 @@ export function MailAccountsCard({
                   → New registration → name it anything → supported account types: <strong>Personal Microsoft accounts</strong> (or “any org + personal”).
                 </li>
                 <li>
-                  Redirect URI (platform <strong>Web</strong>):{" "}
-                  <code className="rounded bg-bg-tint px-1 break-all">{redirectUri}</code>
+                  Redirect URIs (platform <strong>Web</strong>) — add <strong>all</strong> of these:
+                  <ul className="mt-1 space-y-0.5">
+                    {redirectUris.map((u) => (
+                      <li key={u}>
+                        <code className="rounded bg-bg-tint px-1 break-all">{u}</code>
+                      </li>
+                    ))}
+                  </ul>
                 </li>
                 <li>Certificates &amp; secrets → New client secret → copy the <strong>value</strong>.</li>
                 <li>

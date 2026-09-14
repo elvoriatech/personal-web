@@ -1,14 +1,22 @@
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/campaigns/guard";
+import { isSignedIn } from "@/lib/auth";
 import { completeConnection, consumeState, redirectUri } from "@/lib/mail/microsoft";
 
 /** Step 2: Microsoft returns here with a code; exchange it and store the tokens. */
 export async function GET(request: Request) {
-  const denied = await requireAdmin();
-  if (denied) return denied;
-
   const url = new URL(request.url);
   const back = (query: string) => redirect(`/admin/email?${query}`);
+
+  // No admin cookie on this host: the sign-in started on the other host
+  // (www vs non-www). Say so instead of returning a bare 401.
+  if (!(await isSignedIn())) {
+    return back(
+      "ms_error=" +
+        encodeURIComponent(
+          `No admin session on ${url.host}. Open the admin on this exact address, sign in, and click Connect again.`
+        )
+    );
+  }
 
   const oauthError = url.searchParams.get("error");
   if (oauthError) {

@@ -27,15 +27,31 @@ export function isMicrosoftConfigured(): boolean {
   return Boolean(process.env.MS_CLIENT_ID && process.env.MS_CLIENT_SECRET);
 }
 
+/** The site's public hosts: the configured one and its www / non-www twin. */
+export function publicOrigins(): string[] {
+  const base = new URL(site.url);
+  const host = base.hostname.replace(/^www\./, "");
+  return [`${base.protocol}//${host}`, `${base.protocol}//www.${host}`];
+}
+
 /**
- * Where Microsoft sends the browser back. In production it must match the
- * public domain registered in Azure, not the *.vercel.app deployment URL.
+ * Where Microsoft sends the browser back. Cookies are per host, so the
+ * callback must land on the SAME host the admin is signed in on — the request
+ * origin — as long as that is one of the site's public hosts (never a
+ * *.vercel.app deployment URL). Register every value of `redirectUris()` in
+ * Azure.
  */
 export function redirectUri(request: Request): string {
   if (process.env.MS_REDIRECT_URI) return process.env.MS_REDIRECT_URI;
-  const origin =
-    process.env.NODE_ENV === "production" ? site.url.replace(/\/$/, "") : new URL(request.url).origin;
-  return `${origin}/api/admin/microsoft/callback`;
+  const origin = new URL(request.url).origin;
+  const allowed = process.env.NODE_ENV !== "production" || publicOrigins().includes(origin);
+  return `${allowed ? origin : site.url.replace(/\/$/, "")}/api/admin/microsoft/callback`;
+}
+
+/** Every callback URL that may be used, for the Azure registration. */
+export function redirectUris(): string[] {
+  if (process.env.MS_REDIRECT_URI) return [process.env.MS_REDIRECT_URI];
+  return publicOrigins().map((o) => `${o}/api/admin/microsoft/callback`);
 }
 
 /* --------------------------------- state --------------------------------- */
