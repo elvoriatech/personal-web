@@ -8,18 +8,18 @@
 export const ATTACHMENT_OPTIONS = [
   {
     id: "resume_ats",
-    label: "Résumé — single column (ATS)",
-    filename: "Zahoor_Ahmed_Resume_ATS.docx",
+    label: "Résumé — Classic",
+    filename: "Zahoor_Ahmed_Resume.docx",
   },
   {
     id: "resume_design",
-    label: "Résumé — two column (with photo)",
-    filename: "Zahoor_Ahmed_Resume_TwoColumn.docx",
+    label: "Résumé — Modern (with photo)",
+    filename: "Zahoor_Ahmed_Resume_Modern.docx",
   },
   {
     id: "resume_onepage",
-    label: "Résumé — one page",
-    filename: "Zahoor_Ahmed_Resume_OnePage.docx",
+    label: "Résumé — Compact (one page)",
+    filename: "Zahoor_Ahmed_Resume_Compact.docx",
   },
   {
     id: "cover_letter",

@@ -13,8 +13,8 @@ export default async function AdminResumePage() {
     <div>
       <h1 className="font-display text-[24px] font-semibold text-ink">Résumé</h1>
       <p className="mt-1.5 max-w-[70ch] text-[13.5px] text-body">
-        Both builds come from this content — the single-column ATS version and the
-        two-column version with your photo. Where you can, add real numbers to the
+        All three themes come from this content — Classic, Modern with your photo,
+        and the one-page Compact. Where you can, add real numbers to the
         bullets (services managed, volume handled, time saved); measurable results
         are the single biggest weakness recruiters flag.
       </p>

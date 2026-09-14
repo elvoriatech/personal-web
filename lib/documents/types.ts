@@ -1,12 +1,28 @@
-/** Shapes shared by the ATS views, the .docx exporters and the admin editors. */
+/** Shapes shared by the résumé views, the .docx exporters and the admin editors. */
 
 /**
- * "ats"     single column, no tables or images — the full résumé
- * "design"  two-column sidebar with photo
- * "compact" the ATS layout condensed to one page (see lib/documents/condense.ts)
+ * Résumé themes. The ids are stored in saved bundles, so they never change;
+ * only the labels shown to people do.
+ *
+ * "ats"     Classic — single column, no tables or images; the full résumé
+ * "design"  Modern  — two-column sidebar with photo
+ * "compact" Compact — the Classic layout condensed to one page (lib/documents/condense.ts)
  */
 export type ResumeVariant = "ats" | "design" | "compact";
 export const RESUME_VARIANTS: ResumeVariant[] = ["ats", "design", "compact"];
+
+export const RESUME_VARIANT_LABELS: Record<ResumeVariant, string> = {
+  ats: "Classic",
+  design: "Modern",
+  compact: "Compact",
+};
+
+/** Download names. The Classic build is the default, so it carries the plain name. */
+export const RESUME_VARIANT_FILENAMES: Record<ResumeVariant, string> = {
+  ats: "Zahoor_Ahmed_Resume.docx",
+  design: "Zahoor_Ahmed_Resume_Modern.docx",
+  compact: "Zahoor_Ahmed_Resume_Compact.docx",
+};
 
 /** How the two-column photo is cropped. */
 export type PhotoShape = "square" | "circle" | "rounded";

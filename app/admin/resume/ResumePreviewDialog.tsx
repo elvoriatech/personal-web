@@ -3,13 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { DownloadCurrentButton } from "@/components/admin/DownloadCurrentButton";
 import { ResumeSheet } from "@/components/documents/ResumeSheet";
-import { RESUME_VARIANTS, type ResumeDoc, type ResumeVariant } from "@/lib/documents/types";
-
-const LABEL: Record<ResumeVariant, string> = {
-  ats: "Single column",
-  design: "Two column",
-  compact: "One page",
-};
+import {
+  RESUME_VARIANTS,
+  RESUME_VARIANT_LABELS as LABEL,
+  type ResumeDoc,
+  type ResumeVariant,
+} from "@/lib/documents/types";
 
 /**
  * Shows the résumé as it currently is in the editor — unsaved edits included —

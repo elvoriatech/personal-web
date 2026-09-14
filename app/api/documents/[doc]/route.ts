@@ -6,7 +6,13 @@ import {
   buildResumeDocx,
 } from "@/lib/documents/docx";
 import { getDocuments } from "@/lib/documents/store";
-import { RESUME_VARIANTS, type CoverLetterDoc, type ResumeDoc, type ResumeVariant } from "@/lib/documents/types";
+import {
+  RESUME_VARIANTS,
+  RESUME_VARIANT_FILENAMES,
+  type CoverLetterDoc,
+  type ResumeDoc,
+  type ResumeVariant,
+} from "@/lib/documents/types";
 
 const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -69,9 +75,7 @@ function buildResume(resume: ResumeDoc, variant: ResumeVariant): Promise<Buffer>
 }
 
 function resumeFilename(variant: ResumeVariant): string {
-  if (variant === "design") return "Zahoor_Ahmed_Resume_TwoColumn.docx";
-  if (variant === "compact") return "Zahoor_Ahmed_Resume_OnePage.docx";
-  return "Zahoor_Ahmed_Resume_ATS.docx";
+  return RESUME_VARIANT_FILENAMES[variant];
 }
 
 /** Adds the target company so downloads for different applications do not overwrite each other. */

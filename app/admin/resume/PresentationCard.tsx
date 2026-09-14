@@ -3,27 +3,32 @@
 import { useId, useRef, useState } from "react";
 import { Card } from "@/components/admin/Fields";
 import { PHOTO_SHAPE_CLASS } from "@/components/documents/ResumeSheet";
-import { PHOTO_SHAPES, type PhotoShape, type ResumeVariant } from "@/lib/documents/types";
+import {
+  PHOTO_SHAPES,
+  RESUME_VARIANT_LABELS,
+  type PhotoShape,
+  type ResumeVariant,
+} from "@/lib/documents/types";
 
 const SHAPE_LABEL: Record<PhotoShape, string> = { square: "Square", circle: "Circle", rounded: "Rounded" };
 
 const VARIANTS: { id: ResumeVariant; label: string; description: string; bestFor: string }[] = [
   {
     id: "ats",
-    label: "Single column",
-    description: "No tables, no images, standard headings. Parses cleanly.",
+    label: RESUME_VARIANT_LABELS.ats,
+    description: "Single column, standard headings, no tables or images. Parses cleanly.",
     bestFor: "Job portals and any upload an applicant tracking system reads.",
   },
   {
     id: "design",
-    label: "Two column with photo",
-    description: "Sidebar with your photo and contact details, purple accents.",
+    label: RESUME_VARIANT_LABELS.design,
+    description: "Two columns: a sidebar with your photo and contact details, purple accents.",
     bestFor: "Emailing a person directly — a photo is still conventional in Germany.",
   },
   {
     id: "compact",
-    label: "One page",
-    description: "The single-column layout condensed: 3 roles, fewer bullets, shorter skill lists.",
+    label: RESUME_VARIANT_LABELS.compact,
+    description: "The Classic layout on a single page: 3 roles, fewer bullets, shorter skill lists.",
     bestFor: "Recruiters who skim, and applications that ask for one page.",
   },
 ];
@@ -150,7 +155,7 @@ export function PresentationCard({
       {/* -------------------------------- photo ------------------------------- */}
       <div>
         <p className="mb-1.5 block font-display text-[10.5px] font-semibold uppercase tracking-[0.12em] text-body">
-          Photo for the two-column template
+          Photo for the Modern template
         </p>
         <div className="flex flex-wrap items-start gap-5 rounded-xl border border-line bg-bg-tint/60 p-4">
           <div className={`relative h-[112px] w-[112px] shrink-0 overflow-hidden border border-line bg-surface ${PHOTO_SHAPE_CLASS[photoShape] || "rounded-none"}`}>
@@ -173,7 +178,7 @@ export function PresentationCard({
           <div className="min-w-0 flex-1 space-y-3">
             <p className="text-[12.5px] leading-[1.6] text-body">
               {noPhoto
-                ? "The two-column template will be built without a photo."
+                ? "The Modern template will be built without a photo."
                 : usingBundled
                   ? "Using the portrait bundled with the website."
                   : `Using your uploaded photo (${kb(photoDataUrl)}, stored with the résumé).`}
@@ -269,26 +274,26 @@ export function PresentationCard({
             <path d="M1.5 8s2.5-4.5 6.5-4.5S14.5 8 14.5 8s-2.5 4.5-6.5 4.5S1.5 8 1.5 8Z" />
             <circle cx="8" cy="8" r="2" />
           </svg>
-          Preview both templates
+          Preview templates
         </button>
         <span className="ml-2 mr-1 text-[12px] text-muted">Download the last saved version:</span>
         <a
           href="/api/documents/resume?variant=ats"
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          Single column .docx
+          {RESUME_VARIANT_LABELS.ats} .docx
         </a>
         <a
           href="/api/documents/resume?variant=design"
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          Two column .docx
+          {RESUME_VARIANT_LABELS.design} .docx
         </a>
         <a
           href="/api/documents/resume?variant=compact"
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          One page .docx
+          {RESUME_VARIANT_LABELS.compact} .docx
         </a>
         <a
           href="/resume"
