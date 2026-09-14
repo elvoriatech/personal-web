@@ -22,8 +22,15 @@ export default async function ResumePage() {
     label: resume.photoDataUrl === "" ? "Two column" : "Two column (with photo)",
     hint: "For emailing a human. Has a sidebar, so do not upload it to an ATS.",
   };
-  // The template chosen in the admin leads; the other stays one click away.
-  const downloads = resume.preferredVariant === "design" ? [design, ats] : [ats, design];
+  const compact = {
+    href: "/api/documents/resume?variant=compact",
+    label: "One page",
+    hint: "The single-column résumé condensed to one page.",
+  };
+  // The template chosen in the admin leads; the others stay one click away.
+  const all = { ats, design, compact };
+  const preferred = resume.preferredVariant ?? "ats";
+  const downloads = [all[preferred], ...(["ats", "design", "compact"] as const).filter((v) => v !== preferred).map((v) => all[v])];
 
   return (
     <DocumentChrome title="Résumé" downloads={downloads}>

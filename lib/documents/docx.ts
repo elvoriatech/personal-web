@@ -18,6 +18,7 @@ import {
   VerticalAlign,
   WidthType,
 } from "docx";
+import { condenseResume } from "./condense";
 import { shapedResumePhoto } from "./photo";
 import { fillPlaceholders, type CoverLetterDoc, type ResumeDoc } from "./types";
 
@@ -55,25 +56,55 @@ const numbering = {
   ],
 };
 
-const baseStyles = {
-  default: {
-    document: {
-      run: { font: FONT, size: 21 }, // half-points → 10.5pt
-      paragraph: { spacing: { after: 100, line: 264 } },
+/**
+ * Typography for the single-column builds, in half-points / twentieths of a
+ * point as docx wants them. FULL is the standard résumé; COMPACT tightens
+ * sizes and spacing so the condensed content (lib/documents/condense.ts)
+ * fits one A4 page.
+ */
+type Typo = {
+  body: number;
+  small: number;
+  heading: number;
+  name: number;
+  line: number;
+  paragraphAfter: number;
+  bulletAfter: number;
+  roleBefore: number;
+  sectionBefore: number;
+  sectionAfter: number;
+  margin: number;
+};
+const FULL: Typo = {
+  body: 21, small: 20, heading: 22, name: 34, line: 264,
+  paragraphAfter: 100, bulletAfter: 60, roleBefore: 140, sectionBefore: 260, sectionAfter: 120, margin: 720,
+};
+const COMPACT: Typo = {
+  body: 18, small: 17, heading: 19, name: 28, line: 235,
+  paragraphAfter: 30, bulletAfter: 10, roleBefore: 60, sectionBefore: 100, sectionAfter: 40, margin: 560,
+};
+
+function stylesFor(t: Typo) {
+  return {
+    default: {
+      document: {
+        run: { font: FONT, size: t.body },
+        paragraph: { spacing: { after: t.paragraphAfter, line: t.line } },
+      },
     },
-  },
-};
+  };
+}
+const baseStyles = stylesFor(FULL);
 
-const PAGE = {
-  page: {
-    margin: { top: 720, right: 720, bottom: 720, left: 720 }, // 0.5"
-  },
-};
+function pageFor(t: Typo) {
+  return { page: { margin: { top: t.margin, right: t.margin, bottom: t.margin, left: t.margin } } };
+}
+const PAGE = pageFor(FULL);
 
-function sectionHeading(text: string): Paragraph {
+function sectionHeading(text: string, t: Typo = FULL): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_1,
-    spacing: { before: 260, after: 120 },
+    spacing: { before: t.sectionBefore, after: t.sectionAfter },
     border: {
       bottom: { style: BorderStyle.SINGLE, size: 6, color: "999999", space: 2 },
     },
@@ -81,7 +112,7 @@ function sectionHeading(text: string): Paragraph {
       new TextRun({
         text: text.toUpperCase(),
         bold: true,
-        size: 22,
+        size: t.heading,
         color: "000000",
         font: FONT,
       }),
@@ -89,11 +120,11 @@ function sectionHeading(text: string): Paragraph {
   });
 }
 
-function bullet(text: string): Paragraph {
+function bullet(text: string, t: Typo = FULL): Paragraph {
   return new Paragraph({
     numbering: { reference: BULLET_REF, level: 0 },
-    spacing: { after: 60 },
-    children: [new TextRun({ text, font: FONT, size: 21 })],
+    spacing: { after: t.bulletAfter },
+    children: [new TextRun({ text, font: FONT, size: t.body })],
   });
 }
 
@@ -106,7 +137,7 @@ function contactBlock(d: {
   extras?: string;
   linkedin?: string;
   github?: string;
-}): Paragraph[] {
+}, t: Typo = FULL): Paragraph[] {
   const line = [d.location, d.phone, d.email, d.linkedin, d.github, d.extras]
     .filter(Boolean)
     .join(" | ");
@@ -115,51 +146,56 @@ function contactBlock(d: {
     new Paragraph({
       spacing: { after: 40 },
       children: [
-        new TextRun({ text: d.fullName, bold: true, size: 34, font: FONT }),
+        new TextRun({ text: d.fullName, bold: true, size: t.name, font: FONT }),
       ],
     }),
     new Paragraph({
       spacing: { after: 40 },
-      children: [new TextRun({ text: d.headline, size: 22, font: FONT })],
+      children: [new TextRun({ text: d.headline, size: t.heading, font: FONT })],
     }),
     new Paragraph({
-      spacing: { after: 160 },
-      children: [new TextRun({ text: line, size: 20, font: FONT })],
+      spacing: { after: t.sectionAfter + 40 },
+      children: [new TextRun({ text: line, size: t.small, font: FONT })],
     }),
   ];
 }
 
-export async function buildResumeDocx(resume: ResumeDoc): Promise<Buffer> {
-  const children: Paragraph[] = [...contactBlock(resume)];
+export async function buildResumeDocx(
+  resume: ResumeDoc,
+  opts: { compact?: boolean } = {}
+): Promise<Buffer> {
+  const t = opts.compact ? COMPACT : FULL;
+  if (opts.compact) resume = condenseResume(resume);
+  const children: Paragraph[] = [...contactBlock(resume, t)];
 
-  children.push(sectionHeading("Professional Summary"));
+  children.push(sectionHeading("Professional Summary", t));
   children.push(
     new Paragraph({
       spacing: { after: 120 },
-      children: [new TextRun({ text: resume.summary, font: FONT, size: 21 })],
+      children: [new TextRun({ text: resume.summary, font: FONT, size: t.body })],
     })
   );
 
-  children.push(sectionHeading("Technical Skills"));
+  children.push(sectionHeading("Technical Skills", t));
   for (const group of resume.skills) {
     children.push(
       new Paragraph({
         spacing: { after: 60 },
         children: [
-          new TextRun({ text: `${group.label}: `, bold: true, font: FONT, size: 21 }),
-          new TextRun({ text: group.items, font: FONT, size: 21 }),
+          new TextRun({ text: `${group.label}: `, bold: true, font: FONT, size: t.body }),
+          new TextRun({ text: group.items, font: FONT, size: t.body }),
         ],
       })
     );
   }
 
-  children.push(sectionHeading("Professional Experience"));
+  children.push(sectionHeading("Professional Experience", t));
   for (const role of resume.roles) {
     children.push(
       new Paragraph({
-        spacing: { before: 140, after: 20 },
+        spacing: { before: t.roleBefore, after: 20 },
         children: [
-          new TextRun({ text: role.title, bold: true, font: FONT, size: 22 }),
+          new TextRun({ text: role.title, bold: true, font: FONT, size: t.heading }),
         ],
       })
     );
@@ -174,27 +210,27 @@ export async function buildResumeDocx(resume: ResumeDoc): Promise<Buffer> {
             text: `${role.company}, ${role.location}`,
             italics: true,
             font: FONT,
-            size: 21,
+            size: t.body,
           }),
           new TextRun({
             text: `\t${role.start} - ${role.end}`,
             font: FONT,
-            size: 21,
+            size: t.body,
           }),
         ],
       })
     );
-    role.bullets.forEach((b) => children.push(bullet(b)));
+    role.bullets.forEach((b) => children.push(bullet(b, t)));
   }
 
   if (resume.aiProjects.length > 0) {
-    children.push(sectionHeading("AI Engineering Projects"));
+    children.push(sectionHeading("AI Engineering Projects", t));
     for (const project of resume.aiProjects) {
       children.push(
         new Paragraph({
-          spacing: { before: 130, after: 20 },
+          spacing: { before: t.roleBefore, after: 20 },
           children: [
-            new TextRun({ text: project.name, bold: true, font: FONT, size: 21 }),
+            new TextRun({ text: project.name, bold: true, font: FONT, size: t.body }),
           ],
         })
       );
@@ -203,26 +239,26 @@ export async function buildResumeDocx(resume: ResumeDoc): Promise<Buffer> {
           new Paragraph({
             spacing: { after: 70 },
             children: [
-              new TextRun({ text: project.role, italics: true, font: FONT, size: 20 }),
+              new TextRun({ text: project.role, italics: true, font: FONT, size: t.small }),
             ],
           })
         );
       }
-      project.bullets.forEach((b) => children.push(bullet(b)));
+      project.bullets.forEach((b) => children.push(bullet(b, t)));
     }
   }
 
-  children.push(sectionHeading("Education"));
+  children.push(sectionHeading("Education", t));
   for (const item of resume.education) {
     children.push(
       new Paragraph({
         spacing: { after: item.detail ? 20 : 60 },
         children: [
-          new TextRun({ text: item.qualification, bold: true, font: FONT, size: 21 }),
+          new TextRun({ text: item.qualification, bold: true, font: FONT, size: t.body }),
           new TextRun({
             text: ` — ${item.institution}, ${item.period}`,
             font: FONT,
-            size: 21,
+            size: t.body,
           }),
         ],
       })
@@ -231,24 +267,24 @@ export async function buildResumeDocx(resume: ResumeDoc): Promise<Buffer> {
       children.push(
         new Paragraph({
           spacing: { after: 80 },
-          children: [new TextRun({ text: item.detail, font: FONT, size: 20 })],
+          children: [new TextRun({ text: item.detail, font: FONT, size: t.small })],
         })
       );
     }
   }
 
   if (resume.certifications.length > 0) {
-    children.push(sectionHeading("Certifications"));
+    children.push(sectionHeading("Certifications", t));
     for (const item of resume.certifications) {
       children.push(
         new Paragraph({
           spacing: { after: item.detail ? 20 : 60 },
           children: [
-            new TextRun({ text: item.qualification, bold: true, font: FONT, size: 21 }),
+            new TextRun({ text: item.qualification, bold: true, font: FONT, size: t.body }),
             new TextRun({
               text: ` — ${item.institution}, ${item.period}`,
               font: FONT,
-              size: 21,
+              size: t.body,
             }),
           ],
         })
@@ -257,41 +293,46 @@ export async function buildResumeDocx(resume: ResumeDoc): Promise<Buffer> {
         children.push(
           new Paragraph({
             spacing: { after: 80 },
-            children: [new TextRun({ text: item.detail, font: FONT, size: 20 })],
+            children: [new TextRun({ text: item.detail, font: FONT, size: t.small })],
           })
         );
       }
     }
   }
 
-  children.push(sectionHeading("Selected Projects"));
+  children.push(sectionHeading("Selected Projects", t));
   for (const project of resume.projects) {
     const label = project.url ? `${project.name} (${project.url})` : project.name;
     children.push(
       new Paragraph({
         spacing: { after: 70 },
         children: [
-          new TextRun({ text: `${label}: `, bold: true, font: FONT, size: 21 }),
-          new TextRun({ text: project.summary, font: FONT, size: 21 }),
+          new TextRun({ text: `${label}: `, bold: true, font: FONT, size: t.body }),
+          new TextRun({ text: project.summary, font: FONT, size: t.body }),
         ],
       })
     );
   }
 
-  children.push(sectionHeading("Languages"));
+  children.push(sectionHeading("Languages", t));
   children.push(
     new Paragraph({
-      children: [new TextRun({ text: resume.languages, font: FONT, size: 21 })],
+      children: [new TextRun({ text: resume.languages, font: FONT, size: t.body })],
     })
   );
 
   const doc = new Document({
-    styles: baseStyles,
+    styles: stylesFor(t),
     numbering,
-    sections: [{ properties: PAGE, children }],
+    sections: [{ properties: pageFor(t), children }],
   });
 
   return Packer.toBuffer(doc);
+}
+
+/** The ATS layout, condensed to one page. */
+export function buildResumeCompactDocx(resume: ResumeDoc): Promise<Buffer> {
+  return buildResumeDocx(resume, { compact: true });
 }
 
 export async function buildCoverLetterDocx(

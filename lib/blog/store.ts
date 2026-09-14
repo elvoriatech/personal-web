@@ -16,6 +16,7 @@ type Row = {
   tags: string[];
   published_at: Date | string;
   draft: boolean;
+  archived_at: Date | string | null;
 };
 
 function fromRow(r: Row): BlogPost {
@@ -31,6 +32,7 @@ function fromRow(r: Row): BlogPost {
         ? r.published_at.slice(0, 10)
         : r.published_at.toISOString().slice(0, 10),
     draft: r.draft,
+    archivedAt: r.archived_at ? (typeof r.archived_at === "string" ? r.archived_at : r.archived_at.toISOString()).slice(0, 10) : null,
   };
 }
 
@@ -53,15 +55,20 @@ const byNewest = (a: BlogPost, b: BlogPost) =>
 
 export async function listPosts({
   includeDrafts = false,
-}: { includeDrafts?: boolean } = {}): Promise<BlogPost[]> {
+  includeArchived = false,
+}: { includeDrafts?: boolean; includeArchived?: boolean } = {}): Promise<BlogPost[]> {
   const pool = getPool();
 
   if (pool) {
     try {
+      const where = [
+        includeDrafts ? null : "draft = FALSE",
+        includeArchived ? null : "archived_at IS NULL",
+      ].filter(Boolean);
       const { rows } = await pool.query<Row>(
-        `SELECT slug, title, excerpt, body, cover_image, tags, published_at, draft
+        `SELECT slug, title, excerpt, body, cover_image, tags, published_at, draft, archived_at
            FROM blog_posts
-          ${includeDrafts ? "" : "WHERE draft = FALSE"}
+          ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
           ORDER BY published_at DESC, slug`
       );
       return rows.map(fromRow);
@@ -72,7 +79,9 @@ export async function listPosts({
   }
 
   const posts = await readLocal();
-  return posts.filter((p) => includeDrafts || !p.draft).sort(byNewest);
+  return posts
+    .filter((p) => (includeDrafts || !p.draft) && (includeArchived || !p.archivedAt))
+    .sort(byNewest);
 }
 
 export async function getPost(slug: string): Promise<BlogPost | null> {
@@ -81,7 +90,7 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
   if (pool) {
     try {
       const { rows } = await pool.query<Row>(
-        `SELECT slug, title, excerpt, body, cover_image, tags, published_at, draft
+        `SELECT slug, title, excerpt, body, cover_image, tags, published_at, draft, archived_at
            FROM blog_posts WHERE slug = $1`,
         [slug]
       );
@@ -123,9 +132,32 @@ export async function upsertPost(post: BlogPost): Promise<void> {
   }
 
   const posts = await readLocal();
+  const existing = posts.find((p) => p.slug === post.slug);
   const next = posts.filter((p) => p.slug !== post.slug);
-  next.push(post);
+  // A save from the editor must not silently un-archive a post.
+  next.push({ ...post, archivedAt: post.archivedAt ?? existing?.archivedAt ?? null });
   await writeLocal(next.sort(byNewest));
+}
+
+/** Archive (hide but keep) or restore a post. */
+export async function setPostArchived(slug: string, archived: boolean): Promise<void> {
+  const pool = getPool();
+  if (pool) {
+    await pool.query(
+      `UPDATE blog_posts SET archived_at = ${archived ? "now()" : "NULL"}, updated_at = now() WHERE slug = $1`,
+      [slug]
+    );
+    return;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("No DATABASE_URL is configured — posts cannot be changed.");
+  }
+  const posts = await readLocal();
+  await writeLocal(
+    posts.map((p) =>
+      p.slug === slug ? { ...p, archivedAt: archived ? new Date().toISOString().slice(0, 10) : null } : p
+    )
+  );
 }
 
 export async function deletePost(slug: string): Promise<void> {

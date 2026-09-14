@@ -3,11 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { DownloadCurrentButton } from "@/components/admin/DownloadCurrentButton";
 import { ResumeSheet } from "@/components/documents/ResumeSheet";
-import type { ResumeDoc, ResumeVariant } from "@/lib/documents/types";
+import { RESUME_VARIANTS, type ResumeDoc, type ResumeVariant } from "@/lib/documents/types";
 
 const LABEL: Record<ResumeVariant, string> = {
   ats: "Single column",
   design: "Two column",
+  compact: "One page",
 };
 
 /**
@@ -73,7 +74,7 @@ export function ResumePreviewDialog({
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div role="group" aria-label="Template" className="inline-flex rounded-pill border border-line bg-bg-tint p-0.5">
-              {(["ats", "design"] as ResumeVariant[]).map((v) => (
+              {RESUME_VARIANTS.map((v) => (
                 <button
                   key={v}
                   type="button"
@@ -108,7 +109,7 @@ export function ResumePreviewDialog({
         <div className="min-h-0 flex-1 overflow-auto bg-bg-tint p-4 sm:p-6">
           <div
             className={`mx-auto w-[794px] min-h-[1123px] bg-white shadow-[0_20px_60px_-40px_rgba(28,20,60,0.5)] ${
-              variant === "ats" ? "px-12 py-12" : ""
+              variant === "design" ? "" : variant === "compact" ? "px-10 py-10" : "px-12 py-12"
             }`}
           >
             <ResumeSheet resume={resume} variant={variant} photoSrc={photoSrc} />

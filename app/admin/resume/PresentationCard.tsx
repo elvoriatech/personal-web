@@ -20,6 +20,12 @@ const VARIANTS: { id: ResumeVariant; label: string; description: string; bestFor
     description: "Sidebar with your photo and contact details, purple accents.",
     bestFor: "Emailing a person directly — a photo is still conventional in Germany.",
   },
+  {
+    id: "compact",
+    label: "One page",
+    description: "The single-column layout condensed: 3 roles, fewer bullets, shorter skill lists.",
+    bestFor: "Recruiters who skim, and applications that ask for one page.",
+  },
 ];
 
 /** Square-crop, downscale and re-encode in the browser so the stored value stays small. */
@@ -104,7 +110,7 @@ export function PresentationCard({
         <legend className="mb-1.5 block font-display text-[10.5px] font-semibold uppercase tracking-[0.12em] text-body">
           Default template
         </legend>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-3">
           {VARIANTS.map((v) => {
             const active = v.id === variant;
             return (
@@ -279,6 +285,12 @@ export function PresentationCard({
           Two column .docx
         </a>
         <a
+          href="/api/documents/resume?variant=compact"
+          className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
+        >
+          One page .docx
+        </a>
+        <a
           href="/resume"
           target="_blank"
           rel="noopener"
@@ -302,7 +314,7 @@ function VariantSwatch({ variant, active }: { variant: ResumeVariant; active: bo
         active ? "border-accent/40" : "border-line"
       }`}
     >
-      {variant === "ats" ? (
+      {variant !== "design" ? (
         <span className="flex w-full flex-col gap-[3px] p-1.5">
           <span className={`h-[4px] w-[70%] rounded ${line}`} />
           <span className={`mt-1 h-[2px] w-full rounded ${line}`} />

@@ -12,7 +12,7 @@ import { rateLimit } from "@/lib/rateLimit";
 import { headers } from "next/headers";
 import { getDocuments, saveDocuments } from "@/lib/documents/store";
 import { PHOTO_DATA_URL_RE, PHOTO_MAX_CHARS } from "@/lib/documents/photo";
-import { PHOTO_SHAPES, type CoverLetterDoc, type EmailTemplate, type ResumeDoc } from "@/lib/documents/types";
+import { PHOTO_SHAPES, RESUME_VARIANTS, type CoverLetterDoc, type EmailTemplate, type ResumeDoc } from "@/lib/documents/types";
 
 export type AuthState = { error: string };
 export type SaveState = { status: "idle" | "saved" | "error"; message: string };
@@ -96,7 +96,7 @@ export async function saveResume(
       return { status: "error", message: "The photo must be a JPEG or PNG." };
     }
   }
-  if (parsed.preferredVariant && parsed.preferredVariant !== "ats" && parsed.preferredVariant !== "design") {
+  if (parsed.preferredVariant && !RESUME_VARIANTS.includes(parsed.preferredVariant)) {
     return { status: "error", message: "Unknown résumé template." };
   }
   if (parsed.photoShape && !PHOTO_SHAPES.includes(parsed.photoShape)) {
@@ -191,6 +191,18 @@ function coverImageUrl(raw: string): string {
   return /^\/api\/blog\/images\/[a-f0-9]{16,64}$/.test(value) || /^https:\/\/[^\s"'<>]+$/.test(value) ? value : "";
 }
 
+export async function archivePost(formData: FormData): Promise<void> {
+  const { setPostArchived } = await import("@/lib/blog/store");
+  const slug = String(formData.get("slug") ?? "");
+  if (slug) {
+    await setPostArchived(slug, formData.get("restore") !== "1");
+    revalidatePath("/blog");
+    revalidatePath(`/blog/${slug}`);
+    revalidatePath("/admin/blog");
+  }
+}
+
+/** Permanent. Only reachable from the archive, behind a confirmation. */
 export async function removePost(formData: FormData): Promise<void> {
   const { deletePost } = await import("@/lib/blog/store");
   const slug = String(formData.get("slug") ?? "");

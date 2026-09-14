@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   buildCoverLetterDocx,
+  buildResumeCompactDocx,
   buildResumeDesignDocx,
   buildResumeDocx,
 } from "@/lib/documents/docx";
@@ -33,6 +34,7 @@ export async function buildAttachments(ids: AttachmentId[]): Promise<MailAttachm
     let content: Buffer;
     if (id === "resume_ats") content = await buildResumeDocx(resume);
     else if (id === "resume_design") content = await buildResumeDesignDocx(resume);
+    else if (id === "resume_onepage") content = await buildResumeCompactDocx(resume);
     else content = await buildCoverLetterDocx(coverLetter);
 
     out.push({ filename: option.filename, content, contentType: DOCX_TYPE });

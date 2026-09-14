@@ -1,11 +1,12 @@
 import { requireAdmin } from "@/lib/campaigns/guard";
 import {
   buildCoverLetterDocx,
+  buildResumeCompactDocx,
   buildResumeDesignDocx,
   buildResumeDocx,
 } from "@/lib/documents/docx";
 import { getDocuments } from "@/lib/documents/store";
-import type { CoverLetterDoc, ResumeDoc, ResumeVariant } from "@/lib/documents/types";
+import { RESUME_VARIANTS, type CoverLetterDoc, type ResumeDoc, type ResumeVariant } from "@/lib/documents/types";
 
 const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
@@ -58,15 +59,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ doc
 }
 
 function pickVariant(requested: string | null, preferred: ResumeVariant | undefined): ResumeVariant {
-  return requested === "design" || requested === "ats" ? requested : (preferred ?? "ats");
+  return RESUME_VARIANTS.includes(requested as ResumeVariant) ? (requested as ResumeVariant) : (preferred ?? "ats");
 }
 
 function buildResume(resume: ResumeDoc, variant: ResumeVariant): Promise<Buffer> {
-  return variant === "design" ? buildResumeDesignDocx(resume) : buildResumeDocx(resume);
+  if (variant === "design") return buildResumeDesignDocx(resume);
+  if (variant === "compact") return buildResumeCompactDocx(resume);
+  return buildResumeDocx(resume);
 }
 
 function resumeFilename(variant: ResumeVariant): string {
-  return variant === "design" ? "Zahoor_Ahmed_Resume_TwoColumn.docx" : "Zahoor_Ahmed_Resume_ATS.docx";
+  if (variant === "design") return "Zahoor_Ahmed_Resume_TwoColumn.docx";
+  if (variant === "compact") return "Zahoor_Ahmed_Resume_OnePage.docx";
+  return "Zahoor_Ahmed_Resume_ATS.docx";
 }
 
 /** Adds the target company so downloads for different applications do not overwrite each other. */

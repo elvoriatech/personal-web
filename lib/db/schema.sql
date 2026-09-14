@@ -35,6 +35,8 @@ CREATE INDEX IF NOT EXISTS blog_posts_published_idx
 -- Optional cover image for the index card and Open Graph; a URL served by
 -- /api/blog/images/<id> or any https URL.
 ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS cover_image TEXT NOT NULL DEFAULT '';
+-- Archived posts are hidden everywhere but kept; deleting is a separate step.
+ALTER TABLE blog_posts ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
 
 -- Images uploaded from the post editor. Stored in Postgres because the Vercel
 -- filesystem is read-only; each is resized to at most 1600px and re-encoded as

@@ -35,6 +35,18 @@ export function TemplateEditor({
   const [items, setItems] = useState<EmailTemplate[]>(initial);
   const [copied, setCopied] = useState<string | null>(null);
   const [preview, setPreview] = useState<EmailTemplate | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const active = items.filter((t) => !t.archivedAt);
+  const archived = items.filter((t) => t.archivedAt);
+  const update = (id: string, next: Partial<EmailTemplate>) =>
+    setItems((list) => list.map((t) => (t.id === id ? { ...t, ...next } : t)));
+  const archive = (id: string) => update(id, { archivedAt: new Date().toISOString().slice(0, 10) });
+  const restore = (id: string) => update(id, { archivedAt: undefined });
+  const destroy = (id: string) => {
+    setItems((list) => list.filter((t) => t.id !== id));
+    setConfirmDelete(null);
+  };
   const [state, action] = useActionState<SaveState, FormData>(saveTemplates, {
     status: "idle",
     message: "",
@@ -93,7 +105,9 @@ export function TemplateEditor({
       </div>
 
       <div className="space-y-5">
-        {items.map((t, i) => (
+        {active.map((t) => {
+          const i = items.indexOf(t);
+          return (
           <Card
             key={t.id}
             title={t.name || `Template ${i + 1}`}
@@ -105,12 +119,7 @@ export function TemplateEditor({
                 <SmallButton onClick={() => copy(t)}>
                   {copied === t.id ? "Copied" : "Copy"}
                 </SmallButton>
-                <SmallButton
-                  tone="danger"
-                  onClick={() => setItems(items.filter((_, j) => j !== i))}
-                >
-                  Remove
-                </SmallButton>
+                <SmallButton onClick={() => archive(t.id)}>Archive</SmallButton>
               </div>
             }
           >
@@ -129,7 +138,61 @@ export function TemplateEditor({
               hint="Placeholders: {{firstName}} {{company}} {{observation}} {{role}} {{senderName}} {{portfolioUrl}} {{phone}} {{calendarUrl}} {{deadline}} — the preview fills them with sample values."
             />
           </Card>
-        ))}
+          );
+        })}
+
+        {archived.length > 0 && (
+          <section className="rounded-card border border-dashed border-line bg-bg-tint/50 p-5">
+            <h2 className="font-display text-[13px] font-semibold text-ink">
+              Archived <span className="ml-1 text-muted">({archived.length})</span>
+            </h2>
+            <p className="mt-1 text-[12px] text-muted">
+              Kept out of the working list but still saved. Restore any time, or delete for good —
+              deletion cannot be undone once you save.
+            </p>
+            <ul className="mt-3 space-y-2">
+              {archived.map((t) => (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-display text-[13px] font-semibold text-ink">{t.name || t.id}</p>
+                    <p className="truncate text-[11.5px] text-muted">
+                      {t.purpose || t.subject} · archived {t.archivedAt}
+                    </p>
+                  </div>
+                  {confirmDelete === t.id ? (
+                    <div className="flex flex-wrap items-center gap-2 text-[12px] text-red-800">
+                      Delete “{t.name || t.id}” permanently?
+                      <button
+                        type="button"
+                        onClick={() => destroy(t.id)}
+                        className="min-h-[32px] rounded-pill bg-red-600 px-3.5 text-[11.5px] font-semibold text-white"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDelete(null)}
+                        className="min-h-[32px] rounded-pill border border-line bg-surface px-3.5 text-[11.5px] font-semibold text-body"
+                      >
+                        Keep
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <SmallButton onClick={() => restore(t.id)}>Restore</SmallButton>
+                      <SmallButton tone="danger" onClick={() => setConfirmDelete(t.id)}>
+                        Delete permanently
+                      </SmallButton>
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
 
       <SaveBar state={state} canSave={canSave} />

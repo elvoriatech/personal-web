@@ -17,7 +17,7 @@ export function DownloadCurrentButton({
   doc: "resume" | "cover-letter";
   /** The document object as the editor holds it. */
   payload: unknown;
-  variant?: "ats" | "design";
+  variant?: "ats" | "design" | "compact";
   children: React.ReactNode;
   className?: string;
 }) {

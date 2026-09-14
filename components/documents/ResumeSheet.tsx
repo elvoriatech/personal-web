@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { condenseResume } from "@/lib/documents/condense";
 import type { PhotoShape, ResumeDoc, ResumeVariant } from "@/lib/documents/types";
 
 /** Mirrors the mask applied to the .docx image in lib/documents/photo.ts. */
@@ -28,24 +29,22 @@ export function ResumeSheet({
   /** Two-column only. null = build without a photo. */
   photoSrc?: string | null;
 }) {
-  return variant === "design" ? (
-    <DesignSheet resume={resume} photoSrc={photoSrc ?? null} />
-  ) : (
-    <AtsSheet resume={resume} />
-  );
+  if (variant === "design") return <DesignSheet resume={resume} photoSrc={photoSrc ?? null} />;
+  if (variant === "compact") return <AtsSheet resume={condenseResume(resume)} compact />;
+  return <AtsSheet resume={resume} />;
 }
 
 /* ------------------------------ single column ----------------------------- */
 
-function AtsHeading({ children }: { children: ReactNode }) {
+function AtsHeading({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
   return (
-    <h2 className="mt-7 border-b border-neutral-300 pb-1 font-display text-[12.5px] font-bold uppercase tracking-[0.1em] text-black first:mt-0">
+    <h2 className={`${compact ? "mt-3 text-[11px] pb-0.5" : "mt-7 text-[12.5px] pb-1"} border-b border-neutral-300 font-display font-bold uppercase tracking-[0.1em] text-black first:mt-0`}>
       {children}
     </h2>
   );
 }
 
-function AtsSheet({ resume }: { resume: ResumeDoc }) {
+function AtsSheet({ resume, compact = false }: { resume: ResumeDoc; compact?: boolean }) {
   const contact = [
     resume.location,
     resume.phone,
@@ -58,19 +57,19 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
     .join("  |  ");
 
   return (
-    <div className="font-sans text-[13px] leading-[1.55] text-black">
+    <div className={`font-sans text-black ${compact ? "text-[11.5px] leading-[1.4]" : "text-[13px] leading-[1.55]"}`}>
       <header>
-        <p className="font-display text-[26px] font-bold leading-tight tracking-tight text-black">
+        <p className={`font-display font-bold leading-tight tracking-tight text-black ${compact ? "text-[22px]" : "text-[26px]"}`}>
           {resume.fullName}
         </p>
         <p className="mt-1 text-[14px]">{resume.headline}</p>
         <p className="mt-1.5 text-[12px] text-neutral-700">{contact}</p>
       </header>
 
-      <AtsHeading>Professional Summary</AtsHeading>
+      <AtsHeading compact={compact}>Professional Summary</AtsHeading>
       <p className="mt-2">{resume.summary}</p>
 
-      <AtsHeading>Technical Skills</AtsHeading>
+      <AtsHeading compact={compact}>Technical Skills</AtsHeading>
       <dl className="mt-2 space-y-1">
         {resume.skills.map((group, i) => (
           <div key={`${group.label}-${i}`}>
@@ -80,9 +79,9 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
         ))}
       </dl>
 
-      <AtsHeading>Professional Experience</AtsHeading>
+      <AtsHeading compact={compact}>Professional Experience</AtsHeading>
       {resume.roles.map((role, i) => (
-        <section key={`${role.company}-${role.start}-${i}`} className="mt-3.5">
+        <section key={`${role.company}-${role.start}-${i}`} className={compact ? "mt-2" : "mt-3.5"}>
           <p className="text-[13.5px] font-semibold">{role.title}</p>
           <p className="flex flex-wrap justify-between gap-2 text-[12.5px]">
             <span className="italic">
@@ -92,7 +91,7 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
               {role.start} – {role.end}
             </span>
           </p>
-          <ul className="mt-1.5 list-disc space-y-1 pl-5">
+          <ul className={`mt-1 list-disc pl-5 ${compact ? "space-y-0.5" : "space-y-1"}`}>
             {role.bullets.map((b, j) => (
               <li key={j}>{b}</li>
             ))}
@@ -102,14 +101,14 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
 
       {resume.aiProjects.length > 0 && (
         <>
-          <AtsHeading>AI Engineering Projects</AtsHeading>
+          <AtsHeading compact={compact}>AI Engineering Projects</AtsHeading>
           {resume.aiProjects.map((project, i) => (
             <section key={`${project.name}-${i}`} className="mt-3">
               <p className="text-[13.5px] font-semibold">{project.name}</p>
               {project.role && (
                 <p className="text-[12.5px] italic text-neutral-700">{project.role}</p>
               )}
-              <ul className="mt-1.5 list-disc space-y-1 pl-5">
+              <ul className={`mt-1 list-disc pl-5 ${compact ? "space-y-0.5" : "space-y-1"}`}>
                 {project.bullets.map((b, j) => (
                   <li key={j}>{b}</li>
                 ))}
@@ -119,7 +118,7 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
         </>
       )}
 
-      <AtsHeading>Education</AtsHeading>
+      <AtsHeading compact={compact}>Education</AtsHeading>
       <ul className="mt-2 space-y-2">
         {resume.education.map((item, i) => (
           <li key={`${item.qualification}-${i}`}>
@@ -135,7 +134,7 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
 
       {resume.certifications.length > 0 && (
         <>
-          <AtsHeading>Certifications</AtsHeading>
+          <AtsHeading compact={compact}>Certifications</AtsHeading>
           <ul className="mt-2 space-y-2">
             {resume.certifications.map((item, i) => (
               <li key={`${item.qualification}-${i}`}>
@@ -151,7 +150,7 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
         </>
       )}
 
-      <AtsHeading>Selected Projects</AtsHeading>
+      <AtsHeading compact={compact}>Selected Projects</AtsHeading>
       <ul className="mt-2 space-y-1.5">
         {resume.projects.map((p, i) => (
           <li key={`${p.name}-${i}`}>
@@ -164,7 +163,7 @@ function AtsSheet({ resume }: { resume: ResumeDoc }) {
         ))}
       </ul>
 
-      <AtsHeading>Languages</AtsHeading>
+      <AtsHeading compact={compact}>Languages</AtsHeading>
       <p className="mt-2">{resume.languages}</p>
     </div>
   );

@@ -17,6 +17,11 @@ export const ATTACHMENT_OPTIONS = [
     filename: "Zahoor_Ahmed_Resume_TwoColumn.docx",
   },
   {
+    id: "resume_onepage",
+    label: "Résumé — one page",
+    filename: "Zahoor_Ahmed_Resume_OnePage.docx",
+  },
+  {
     id: "cover_letter",
     label: "Cover letter",
     filename: "Zahoor_Ahmed_Cover_Letter.docx",

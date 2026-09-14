@@ -4,7 +4,8 @@ import { isSignedIn } from "@/lib/auth";
 import { canPersist } from "@/lib/documents/store";
 import { getPost, listPosts } from "@/lib/blog/store";
 import { postBodyHtml } from "@/lib/blog/html";
-import { removePost } from "../actions";
+import { archivePost } from "../actions";
+import { ArchivedPostRow } from "./ArchivedPostRow";
 import { PostEditor } from "./PostEditor";
 
 export const dynamic = "force-dynamic";
@@ -17,7 +18,9 @@ export default async function AdminBlogPage({
   if (!(await isSignedIn())) redirect("/admin/login");
 
   const { edit } = await searchParams;
-  const posts = await listPosts({ includeDrafts: true });
+  const all = await listPosts({ includeDrafts: true, includeArchived: true });
+  const posts = all.filter((p) => !p.archivedAt);
+  const archived = all.filter((p) => p.archivedAt);
   const found = edit ? await getPost(edit) : null;
   // Older posts are plain text; the editor works in HTML.
   const editing = found ? { ...found, body: postBodyHtml(found.body) } : undefined;
@@ -82,13 +85,13 @@ export default async function AdminBlogPage({
                   >
                     Edit
                   </Link>
-                  <form action={removePost}>
+                  <form action={archivePost}>
                     <input type="hidden" name="slug" value={post.slug} />
                     <button
                       type="submit"
-                      className="inline-flex min-h-[34px] items-center rounded-pill border border-red-200 px-3 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-red-700 hover:bg-red-50"
+                      className="inline-flex min-h-[34px] items-center rounded-pill border border-line px-3 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
                     >
-                      Delete
+                      Archive
                     </button>
                   </form>
                 </div>
@@ -97,6 +100,22 @@ export default async function AdminBlogPage({
           </ul>
         )}
       </section>
+
+      {archived.length > 0 && (
+        <section className="mt-8 rounded-card border border-dashed border-line bg-bg-tint/50 p-5">
+          <h2 className="font-display text-[13px] font-semibold text-ink">
+            Archived <span className="ml-1 text-muted">({archived.length})</span>
+          </h2>
+          <p className="mt-1 text-[12px] text-muted">
+            Hidden from the blog but kept. Restore any time, or delete permanently.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {archived.map((post) => (
+              <ArchivedPostRow key={post.slug} post={post} />
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,7 +1,12 @@
 /** Shapes shared by the ATS views, the .docx exporters and the admin editors. */
 
-/** "ats" = single column, no tables or images; "design" = two-column sidebar with photo. */
-export type ResumeVariant = "ats" | "design";
+/**
+ * "ats"     single column, no tables or images — the full résumé
+ * "design"  two-column sidebar with photo
+ * "compact" the ATS layout condensed to one page (see lib/documents/condense.ts)
+ */
+export type ResumeVariant = "ats" | "design" | "compact";
+export const RESUME_VARIANTS: ResumeVariant[] = ["ats", "design", "compact"];
 
 /** How the two-column photo is cropped. */
 export type PhotoShape = "square" | "circle" | "rounded";
@@ -86,6 +91,11 @@ export type EmailTemplate = {
   purpose: string;
   subject: string;
   body: string;
+  /**
+   * Archived templates stay in the bundle but are hidden from the working
+   * list; deleting is a second, explicit step from the archive. ISO date.
+   */
+  archivedAt?: string;
 };
 
 export type DocumentBundle = {

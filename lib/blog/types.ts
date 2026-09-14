@@ -14,6 +14,8 @@ export type BlogPost = {
   /** ISO date (YYYY-MM-DD). */
   publishedAt: string;
   draft: boolean;
+  /** Set when archived: hidden from the public blog and the working list, but kept. */
+  archivedAt?: string | null;
 };
 
 export type PostBlock =

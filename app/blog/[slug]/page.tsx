@@ -21,7 +21,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPost(slug);
-  if (!post || post.draft) return { title: "Post not found" };
+  if (!post || post.draft || post.archivedAt) return { title: "Post not found" };
 
   const description = post.excerpt || postPlainText(post.body).slice(0, 160);
   return {
@@ -46,7 +46,7 @@ export default async function BlogPostPage({
 }) {
   const { slug } = await params;
   const post = await getPost(slug);
-  if (!post || post.draft) notFound();
+  if (!post || post.draft || post.archivedAt) notFound();
 
   const html = postBodyHtml(post.body);
   const published = new Date(`${post.publishedAt}T00:00:00Z`).toLocaleDateString(
