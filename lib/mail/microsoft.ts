@@ -3,6 +3,7 @@ import "server-only";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import nodemailer from "nodemailer";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
 import { site } from "@/content/site";
 import { getPool } from "@/lib/db/client";
 import { decryptSecret, encryptSecret } from "./crypto";
@@ -64,18 +65,28 @@ function signState(nonce: string): string {
   return createHmac("sha256", stateSecret()).update(`ms-state:${nonce}`).digest("hex");
 }
 
-/** Issues a signed nonce, kept in a short-lived cookie, to bind the callback to this browser. */
-export async function issueState(): Promise<string> {
+export const STATE_COOKIE_NAME = STATE_COOKIE;
+
+/** A signed nonce that binds the callback to the browser that started the sign-in. */
+export function newState(): string {
   const nonce = randomBytes(16).toString("hex");
-  const state = `${nonce}.${signState(nonce)}`;
-  (await cookies()).set(STATE_COOKIE, state, {
+  return `${nonce}.${signState(nonce)}`;
+}
+
+/**
+ * Attaches the state cookie to the redirect response itself. Setting it via
+ * cookies() and then throwing redirect() can lose the cookie in a route
+ * handler, which makes the callback reject a perfectly good sign-in.
+ */
+export function attachStateCookie(response: NextResponse, state: string): NextResponse {
+  response.cookies.set(STATE_COOKIE, state, {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 600,
   });
-  return state;
+  return response;
 }
 
 export async function consumeState(received: string): Promise<boolean> {
