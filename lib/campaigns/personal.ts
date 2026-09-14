@@ -11,6 +11,7 @@ import { formatSendError, sendHtmlEmail, type MailAttachment } from "./mailer";
 import { site } from "@/content/site";
 import { ATTACHMENT_OPTIONS, type AttachmentId } from "./attachments";
 import { DEFAULT_EMAIL_THEME, type EmailTheme } from "./themes";
+import type { TransportChoice } from "@/lib/mail/transports";
 
 export { ATTACHMENT_OPTIONS };
 export type { AttachmentId };
@@ -55,6 +56,8 @@ export async function sendPersonalEmail(params: {
   attachments: AttachmentId[];
   ccSelf?: boolean;
   theme?: EmailTheme;
+  /** Which account sends it; "auto" prefers a real mailbox. */
+  via?: TransportChoice;
 }): Promise<PersonalSendResult> {
   const to = params.to.trim();
   if (!to || !to.includes("@")) return { ok: false, error: "A valid recipient is required." };
@@ -85,6 +88,8 @@ export async function sendPersonalEmail(params: {
     bcc: params.ccSelf ? site.email : undefined,
     replyTo: site.email,
     attachments,
+    via: params.via ?? "auto",
+    purpose: "personal",
   });
 
   if (!res.sent) {
@@ -92,7 +97,7 @@ export async function sendPersonalEmail(params: {
       ok: false,
       error:
         res.reason === "not_configured"
-          ? "Mail is not configured. Set EMAIL_USER and EMAIL_PASS (or RESEND_API_KEY)."
+          ? "No sending account is set up. Connect Hotmail, or set RESEND_API_KEY."
           : formatSendError(res.detail),
     };
   }

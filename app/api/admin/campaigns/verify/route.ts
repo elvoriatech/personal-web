@@ -1,15 +1,12 @@
 import { requireAdmin } from "@/lib/campaigns/guard";
-import { fromAddress, mailerMode, verifyMailer } from "@/lib/campaigns/mailer";
+import { verifyMailer } from "@/lib/campaigns/mailer";
+import { coerceTransportChoice } from "@/lib/mail/transports";
 
-/** Checks the SMTP login without sending anything. */
-export async function POST() {
+/** Checks a sending account without sending anything. Body: { via?: transport }. */
+export async function POST(request: Request) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const result = await verifyMailer();
-  return Response.json({
-    ...result,
-    mode: mailerMode(),
-    from: mailerMode() === "unconfigured" ? "" : fromAddress(),
-  });
+  const body = (await request.json().catch(() => ({}))) as { via?: string };
+  return Response.json(await verifyMailer(coerceTransportChoice(body.via)));
 }

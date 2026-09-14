@@ -6,18 +6,22 @@ import { Card, Field, SmallButton, TextArea } from "@/components/admin/Fields";
 import { ThemePicker } from "@/components/admin/ThemePicker";
 import { ATTACHMENT_OPTIONS, type AttachmentId } from "@/lib/campaigns/attachments";
 import { DEFAULT_EMAIL_THEME, type EmailTheme } from "@/lib/campaigns/themes";
+import { TransportPicker } from "@/components/admin/TransportPicker";
+import type { MailStatus, MailTransport } from "@/lib/mail/transports";
 
 const SAMPLE_BODY =
   "Hi there,\n\nThis is how your message will look. Write your email in the box on the left and open the preview again.\n\nBest regards,\nZahoor Ahmed";
 
 export function PersonalEmailForm({
-  mailReady,
+  mail,
   defaultAttachment = "resume_ats",
 }: {
-  mailReady: boolean;
+  mail: MailStatus;
   /** Follows the template chosen in the résumé admin. */
   defaultAttachment?: AttachmentId;
 }) {
+  const mailReady = mail.available.length > 0;
+  const [via, setVia] = useState<MailTransport | null>(mail.personalDefault);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -34,12 +38,13 @@ export function PersonalEmailForm({
     setChecking(true);
     setCheck(null);
     try {
-      const res = await fetch("/api/admin/campaigns/verify", { method: "POST" });
-      const data = (await res.json()) as { ok: boolean; detail: string; mode: string; from: string };
-      setCheck({
-        ok: data.ok,
-        text: data.ok ? `${data.mode.toUpperCase()} OK — sending as ${data.from}` : data.detail,
+      const res = await fetch("/api/admin/campaigns/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ via: via ?? "auto" }),
       });
+      const data = (await res.json()) as { ok: boolean; detail: string; from: string };
+      setCheck({ ok: data.ok, text: data.ok ? `${data.detail} Sending as ${data.from}.` : data.detail });
     } catch (err) {
       setCheck({ ok: false, text: err instanceof Error ? err.message : "Could not reach the server." });
     } finally {
@@ -76,7 +81,7 @@ export function PersonalEmailForm({
       const res = await fetch("/api/admin/campaigns/personal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject, body, attachments, ccSelf, theme }),
+        body: JSON.stringify({ to, subject, body, attachments, ccSelf, theme, via: via ?? "auto" }),
       });
       const data = (await res.json()) as { ok: true; attached: string[] } | { ok: false; error: string };
 
@@ -100,13 +105,6 @@ export function PersonalEmailForm({
 
   return (
     <div className="space-y-5">
-      {!mailReady && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12.5px] text-red-800">
-          No mail credentials. Set <code>EMAIL_USER</code> and <code>EMAIL_PASS</code>{" "}
-          (an app password from your mail provider) before sending.
-        </p>
-      )}
-
       <Card
         title="Compose"
         action={
@@ -128,6 +126,7 @@ export function PersonalEmailForm({
             {check.text}
           </p>
         )}
+        <TransportPicker available={mail.available} value={via} onChange={setVia} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="To" value={to} onChange={setTo} type="email" />
           <Field label="Subject" value={subject} onChange={setSubject} />

@@ -1,4 +1,5 @@
 import type { EmailTheme } from "./themes";
+import type { TransportChoice } from "@/lib/mail/transports";
 
 export type EmailTemplateType = "initial" | "follow_up_1" | "follow_up_2";
 
@@ -70,6 +71,8 @@ export type SendJob = {
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
   theme: EmailTheme;
+  /** Which account carries the send; "auto" resolves at send time. */
+  transport: TransportChoice;
   selectionMode: SendJobSelectionMode;
   totalCount: number;
   processedIndex: number;

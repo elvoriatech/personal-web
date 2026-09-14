@@ -2,6 +2,7 @@ import "server-only";
 
 import { coerceEmailTheme, type EmailTheme } from "./themes";
 import type { RecipientInput } from "./types";
+import { coerceTransportChoice, type TransportChoice } from "@/lib/mail/transports";
 
 import { getPool } from "@/lib/db/client";
 import { FOLLOW_UP_1_AFTER_DAYS, FOLLOW_UP_2_AFTER_DAYS } from "./constants";
@@ -372,11 +373,12 @@ export async function createCampaign(params: {
   autoFollowUp: boolean;
   recipientCount: number;
   theme: EmailTheme;
+  transport: TransportChoice;
 }): Promise<string> {
   const { rows } = await db().query<{ id: string }>(
-    `INSERT INTO em_campaigns (template_type, auto_follow_up, recipient_count, theme)
-     VALUES ($1, $2, $3, $4) RETURNING id`,
-    [params.templateType, params.autoFollowUp, params.recipientCount, coerceEmailTheme(params.theme)]
+    `INSERT INTO em_campaigns (template_type, auto_follow_up, recipient_count, theme, transport)
+     VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+    [params.templateType, params.autoFollowUp, params.recipientCount, coerceEmailTheme(params.theme), coerceTransportChoice(params.transport)]
   );
   return rows[0].id;
 }
@@ -385,6 +387,15 @@ export async function createCampaign(params: {
  * Theme of the most recent campaign of a given stage — automatic follow-ups
  * use it so a plain-letter thread does not suddenly turn into a branded card.
  */
+/** Transport of the most recent campaign of a stage — follow-ups reuse it. */
+export async function latestCampaignTransport(templateType: EmailTemplateType): Promise<TransportChoice> {
+  const { rows } = await db().query<{ transport: string }>(
+    "SELECT transport FROM em_campaigns WHERE template_type = $1 ORDER BY created_at DESC LIMIT 1",
+    [templateType]
+  );
+  return coerceTransportChoice(rows[0]?.transport);
+}
+
 export async function latestCampaignTheme(
   templateType: EmailTemplateType
 ): Promise<EmailTheme | null> {

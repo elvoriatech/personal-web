@@ -157,3 +157,21 @@ ALTER TABLE em_campaigns ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'b
   CHECK (theme IN ('branded', 'plain'));
 ALTER TABLE em_send_jobs ADD COLUMN IF NOT EXISTS theme TEXT NOT NULL DEFAULT 'branded'
   CHECK (theme IN ('branded', 'plain'));
+
+-- Connected mailbox for sending through Microsoft (Hotmail/Outlook) via OAuth2.
+-- Tokens are encrypted with a key derived from ADMIN_SESSION_SECRET before they
+-- are stored; one row per provider.
+CREATE TABLE IF NOT EXISTS mail_connections (
+  provider       TEXT PRIMARY KEY,
+  account_email  TEXT NOT NULL,
+  refresh_token  TEXT NOT NULL,
+  access_token   TEXT NOT NULL DEFAULT '',
+  expires_at     TIMESTAMPTZ,
+  scope          TEXT NOT NULL DEFAULT '',
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Which transport carries a campaign: 'auto', 'resend', 'microsoft' or 'smtp'.
+ALTER TABLE em_campaigns ADD COLUMN IF NOT EXISTS transport TEXT NOT NULL DEFAULT 'auto';
+ALTER TABLE em_send_jobs ADD COLUMN IF NOT EXISTS transport TEXT NOT NULL DEFAULT 'auto';

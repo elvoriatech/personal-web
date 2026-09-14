@@ -43,6 +43,13 @@ export async function login(
   redirect("/admin");
 }
 
+export async function disconnectMicrosoftAction(): Promise<void> {
+  const { disconnectMicrosoft } = await import("@/lib/mail/microsoft");
+  await disconnectMicrosoft();
+  revalidatePath("/admin/email");
+  redirect("/admin/email?ms_disconnected=1");
+}
+
 export async function logout(): Promise<void> {
   await destroySession();
   redirect("/admin/login");

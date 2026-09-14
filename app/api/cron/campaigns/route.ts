@@ -3,6 +3,7 @@ import { createSendJob, getActiveSendJob, processSendJobBatch } from "@/lib/camp
 import {
   isCampaignsConfigured,
   latestCampaignTheme,
+  latestCampaignTransport,
   listRecipientsForAutoFollowUp,
 } from "@/lib/campaigns/store";
 import { DEFAULT_CAMPAIGN_THEME } from "@/lib/campaigns/themes";
@@ -48,6 +49,7 @@ export async function GET(request: Request) {
       // Follow-ups inherit the look of the initial send, so a plain-letter
       // thread does not suddenly turn into a branded card.
       const theme = (await latestCampaignTheme("initial")) ?? DEFAULT_CAMPAIGN_THEME;
+      const transport = await latestCampaignTransport("initial");
 
       // Only one job can run at a time, so queue the earlier stage first and
       // let the next tick pick up the other.
@@ -56,6 +58,7 @@ export async function GET(request: Request) {
           templateType: "follow_up_1",
           autoFollowUp: true,
           theme,
+          transport,
           selectionMode: "recipient_ids",
           recipientIds: due.followUp1,
         });
@@ -65,6 +68,7 @@ export async function GET(request: Request) {
           templateType: "follow_up_2",
           autoFollowUp: false,
           theme,
+          transport,
           selectionMode: "recipient_ids",
           recipientIds: due.followUp2,
         });

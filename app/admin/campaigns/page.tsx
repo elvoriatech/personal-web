@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { isSignedIn } from "@/lib/auth";
 import { RECIPIENTS_PAGE_SIZE } from "@/lib/campaigns/constants";
 import { getActiveSendJob } from "@/lib/campaigns/jobs";
-import { mailerMode } from "@/lib/campaigns/mailer";
+import { getMailStatus } from "@/lib/campaigns/mailer";
 import { seedTemplatesIfMissing } from "@/lib/campaigns/seed";
 import {
   isCampaignsConfigured,
@@ -20,7 +20,7 @@ export default async function AdminCampaignsPage() {
   if (!(await isSignedIn())) redirect("/admin/login");
 
   const configured = isCampaignsConfigured();
-  const mode = mailerMode();
+  const mail = await getMailStatus();
 
   // Loaded here rather than in a mount effect, so the first paint already has
   // the data and React is not asked to cascade a render on mount.
@@ -64,10 +64,10 @@ export default async function AdminCampaignsPage() {
         recipient, so a timeout never double-sends.
       </p>
 
-      {mode === "unconfigured" && (
+      {mail.available.length === 0 && (
         <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[12.5px] text-red-800">
-          No mail credentials. Set <code>EMAIL_USER</code> and <code>EMAIL_PASS</code>{" "}
-          (an app password from your mail provider, not your account password) before sending.
+          No sending account yet. Connect Hotmail under <Link href="/admin/email" className="underline">Send an email</Link>,
+          or set <code>RESEND_API_KEY</code> with a verified domain.
         </p>
       )}
 
@@ -86,6 +86,7 @@ export default async function AdminCampaignsPage() {
           initialStats={stats}
           initialJob={job}
           templates={templates}
+          mail={mail}
         />
       </div>
     </div>

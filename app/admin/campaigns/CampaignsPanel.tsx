@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RECIPIENTS_PAGE_SIZE, SEND_JOB_POLL_MS } from "@/lib/campaigns/constants";
 import type { CampaignTemplate, Recipient, RecipientInput, SendJob } from "@/lib/campaigns/types";
+import type { MailStatus } from "@/lib/mail/transports";
 import { AddRecipients } from "./_components/AddRecipients";
 import { api, recipientsUrl, type Notice, type RecipientQuery, type Stats } from "./_components/api";
 import { JobProgress } from "./_components/JobProgress";
@@ -24,12 +25,14 @@ export function CampaignsPanel({
   initialStats,
   initialJob,
   templates,
+  mail,
 }: {
   configured: boolean;
   initialPage: Page;
   initialStats: Stats;
   initialJob: SendJob | null;
   templates: CampaignTemplate[];
+  mail: MailStatus;
 }) {
   const [page, setPage] = useState<Page>(initialPage);
   const [query, setQuery] = useState<RecipientQuery>(INITIAL_QUERY);
@@ -134,6 +137,7 @@ export function CampaignsPanel({
         body: JSON.stringify({
           templateType: req.templateType,
           theme: req.theme,
+          transport: req.transport,
           autoFollowUp: req.autoFollowUp,
           selectionMode: req.mode === "selected" ? "recipient_ids" : "all_not_sent",
           recipientIds: req.mode === "selected" ? [...selected] : undefined,
@@ -239,6 +243,7 @@ export function CampaignsPanel({
 
       <SendComposer
         templates={templates}
+        mail={mail}
         stats={stats}
         selectedCount={selected.size}
         busy={busy}

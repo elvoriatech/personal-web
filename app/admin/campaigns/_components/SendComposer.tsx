@@ -4,6 +4,8 @@ import { useCallback, useState } from "react";
 import { EmailPreviewDialog } from "@/components/admin/EmailPreviewDialog";
 import { SmallButton } from "@/components/admin/Fields";
 import { ThemePicker } from "@/components/admin/ThemePicker";
+import { TransportPicker } from "@/components/admin/TransportPicker";
+import type { MailStatus, MailTransport } from "@/lib/mail/transports";
 import { applyTemplateVars } from "@/lib/campaigns/templateVars";
 import { DEFAULT_CAMPAIGN_THEME, EMAIL_THEMES, type EmailTheme } from "@/lib/campaigns/themes";
 import {
@@ -18,6 +20,7 @@ import type { Stats } from "./api";
 export type SendRequest = {
   templateType: EmailTemplateType;
   theme: EmailTheme;
+  transport: MailTransport | "auto";
   autoFollowUp: boolean;
   mode: "all_not_sent" | "selected";
 };
@@ -26,6 +29,7 @@ const SAMPLE_VARS = { firstName: "Lena", companyName: "Nordlicht Logistik GmbH",
 
 export function SendComposer({
   templates,
+  mail,
   stats,
   selectedCount,
   busy,
@@ -34,6 +38,7 @@ export function SendComposer({
   onAudit,
 }: {
   templates: CampaignTemplate[];
+  mail: MailStatus;
   stats: Stats;
   selectedCount: number;
   busy: boolean;
@@ -44,6 +49,7 @@ export function SendComposer({
   const [templateType, setTemplateType] = useState<EmailTemplateType>("initial");
   const [theme, setTheme] = useState<EmailTheme>(DEFAULT_CAMPAIGN_THEME);
   const [autoFollowUp, setAutoFollowUp] = useState(true);
+  const [transport, setTransport] = useState<MailTransport | null>(mail.campaignDefault);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [confirm, setConfirm] = useState<SendRequest["mode"] | null>(null);
 
@@ -117,6 +123,9 @@ export function SendComposer({
         {/* -------------------------------- theme ----------------------------- */}
         <ThemePicker value={theme} onChange={setTheme} />
 
+        {/* ------------------------------ transport --------------------------- */}
+        <TransportPicker available={mail.available} value={transport} onChange={setTransport} label="Send via" />
+
         {/* ----------------------------- follow-ups --------------------------- */}
         <label className="flex items-start gap-3 rounded-xl border border-line bg-bg-tint/60 px-4 py-3 text-[13px] text-body">
           <input
@@ -159,7 +168,7 @@ export function SendComposer({
                 onClick={async () => {
                   const mode = confirm;
                   setConfirm(null);
-                  await onSend({ templateType, theme, autoFollowUp, mode });
+                  await onSend({ templateType, theme, transport: transport ?? "auto", autoFollowUp, mode });
                 }}
                 className="accent-gradient min-h-[40px] rounded-pill px-5 font-display text-[12px] font-semibold uppercase tracking-[0.08em] text-white disabled:opacity-50"
               >
@@ -178,7 +187,7 @@ export function SendComposer({
           <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
               type="button"
-              disabled={busy || jobActive || notSent === 0}
+              disabled={busy || jobActive || notSent === 0 || !transport}
               onClick={() => setConfirm("all_not_sent")}
               className="accent-gradient min-h-[42px] rounded-pill px-6 font-display text-[12.5px] font-semibold uppercase tracking-[0.08em] text-white disabled:opacity-50"
             >
@@ -186,7 +195,7 @@ export function SendComposer({
             </button>
             <button
               type="button"
-              disabled={busy || jobActive || selectedCount === 0}
+              disabled={busy || jobActive || selectedCount === 0 || !transport}
               onClick={() => setConfirm("selected")}
               className="min-h-[42px] rounded-pill border border-line bg-surface px-6 font-display text-[12.5px] font-semibold uppercase tracking-[0.08em] text-body disabled:opacity-50"
             >

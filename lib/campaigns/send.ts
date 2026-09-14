@@ -11,6 +11,7 @@ import {
 import { applyTemplateVars, recipientToVars } from "./templateVars";
 import { site } from "@/content/site";
 import type { EmailTheme } from "./themes";
+import type { TransportChoice } from "@/lib/mail/transports";
 import type { CampaignTemplate, EmailTemplateType, Recipient } from "./types";
 
 export type BatchResult = {
@@ -43,6 +44,7 @@ export async function sendBatchToRecipients(params: {
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
   theme: EmailTheme;
+  transport: TransportChoice;
   campaignId: string;
 }): Promise<BatchResult> {
   const result: BatchResult = {
@@ -105,6 +107,8 @@ export async function sendBatchToRecipients(params: {
       // Replies always come back to the personal inbox, whichever transport
       // actually carried the message out.
       replyTo: process.env.CONTACT_TO_EMAIL || site.email,
+      via: params.transport,
+      purpose: "campaign",
     });
 
     if (res.sent) {
@@ -117,7 +121,7 @@ export async function sendBatchToRecipients(params: {
       result.failed++;
       const detail =
         res.reason === "not_configured"
-          ? "Mail is not configured on the server."
+          ? "No sending account is set up on the server."
           : formatSendError(res.detail);
       result.errors.push(`${r.email}: ${detail}`);
       await log("failed", detail);

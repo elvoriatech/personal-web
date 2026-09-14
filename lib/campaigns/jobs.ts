@@ -12,6 +12,7 @@ import {
   updateCampaignCounts,
 } from "./store";
 import { coerceEmailTheme, type EmailTheme } from "./themes";
+import { coerceTransportChoice, type TransportChoice } from "@/lib/mail/transports";
 import type {
   EmailTemplateType,
   SendJob,
@@ -26,6 +27,7 @@ type JobRow = {
   template_type: EmailTemplateType;
   auto_follow_up: boolean;
   theme: EmailTheme | null;
+  transport: string | null;
   selection_mode: SendJobSelectionMode;
   recipient_ids: string[];
   processed_index: number;
@@ -54,6 +56,7 @@ function mapJob(r: JobRow): SendJob {
     templateType: r.template_type,
     autoFollowUp: r.auto_follow_up,
     theme: coerceEmailTheme(r.theme),
+    transport: coerceTransportChoice(r.transport),
     selectionMode: r.selection_mode,
     totalCount: r.total_count,
     processedIndex: r.processed_index,
@@ -92,6 +95,7 @@ export async function createSendJob(params: {
   templateType: EmailTemplateType;
   autoFollowUp: boolean;
   theme: EmailTheme;
+  transport?: TransportChoice;
   selectionMode: SendJobSelectionMode;
   recipientIds?: string[];
 }): Promise<SendJob> {
@@ -113,12 +117,13 @@ export async function createSendJob(params: {
     autoFollowUp: params.autoFollowUp,
     recipientCount: ids.length,
     theme: params.theme,
+    transport: params.transport ?? "auto",
   });
 
   const { rows } = await db().query<JobRow>(
     `INSERT INTO em_send_jobs
-       (campaign_id, status, template_type, auto_follow_up, selection_mode, recipient_ids, total_count, theme)
-     VALUES ($1, 'queued', $2, $3, $4, $5::jsonb, $6, $7)
+       (campaign_id, status, template_type, auto_follow_up, selection_mode, recipient_ids, total_count, theme, transport)
+     VALUES ($1, 'queued', $2, $3, $4, $5::jsonb, $6, $7, $8)
      RETURNING *`,
     [
       campaignId,
@@ -128,6 +133,7 @@ export async function createSendJob(params: {
       JSON.stringify(ids),
       ids.length,
       coerceEmailTheme(params.theme),
+      coerceTransportChoice(params.transport),
     ]
   );
   return mapJob(rows[0]);
@@ -210,6 +216,7 @@ export async function processSendJobBatch(): Promise<ProcessResult> {
     templateType: job.templateType,
     autoFollowUp: job.autoFollowUp,
     theme: job.theme,
+    transport: job.transport,
     campaignId: job.campaignId,
   });
 
