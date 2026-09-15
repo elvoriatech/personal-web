@@ -45,10 +45,15 @@ export const metadata: Metadata = {
     "AWS Kubernetes",
   ],
   category: "technology",
-  // Paste the token from Search Console → Settings → Ownership verification → HTML tag.
-  verification: process.env.GOOGLE_SITE_VERIFICATION
-    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
-    : undefined,
+  // Google: Search Console → Settings → Ownership verification → HTML tag.
+  // Bing: Webmaster Tools → Add site → HTML meta tag (msvalidate.01), or
+  // the BingSiteAuth.xml option, which app/BingSiteAuth.xml serves from the same token.
+  verification: {
+    ...(process.env.GOOGLE_SITE_VERIFICATION ? { google: process.env.GOOGLE_SITE_VERIFICATION } : {}),
+    ...(process.env.BING_SITE_VERIFICATION
+      ? { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }
+      : {}),
+  },
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
