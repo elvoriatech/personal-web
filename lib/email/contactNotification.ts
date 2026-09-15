@@ -1,5 +1,6 @@
 import { site } from "@/content/site";
 import { EMAIL_THEME, escapeHtml } from "@/lib/campaigns/emailLayout";
+import { budgetLabel } from "@/lib/contactState";
 
 /**
  * The email Zahoor receives when someone submits the contact form.
@@ -16,6 +17,9 @@ import { EMAIL_THEME, escapeHtml } from "@/lib/campaigns/emailLayout";
 export type ContactNotificationInput = {
   name: string;
   email: string;
+  /** Optional lead-qualification fields from the project form. */
+  company?: string;
+  budget?: string;
   message: string;
   /** Defaults to now. Injected by tests so output is stable. */
   receivedAt?: Date;
@@ -88,6 +92,8 @@ export function buildContactNotification(input: ContactNotificationInput): Conta
   const name = input.name.trim();
   const email = input.email.trim();
   const message = input.message.trim();
+  const company = input.company?.trim() ?? "";
+  const budget = input.budget ? budgetLabel(input.budget) : "";
   const domain = site.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
   const senderDomain = email.split("@")[1] ?? "";
 
@@ -98,7 +104,9 @@ export function buildContactNotification(input: ContactNotificationInput): Conta
   const reply = escapeHtml(replyHref(email, name));
   const year = receivedAt.getFullYear();
 
-  const subject = `New enquiry from ${name} · ${domain}`;
+  const subject = company
+    ? `New project enquiry from ${name} (${company}) · ${domain}`
+    : `New project enquiry from ${name} · ${domain}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -151,7 +159,7 @@ export function buildContactNotification(input: ContactNotificationInput): Conta
           <!-- Lead -->
           <tr>
             <td style="padding:30px 32px 8px 32px;">
-              <h1 style="margin:0 0 6px 0;font-family:${font};font-size:22px;line-height:1.3;font-weight:700;color:${ink};letter-spacing:-0.01em;">${safeName} sent you a message</h1>
+              <h1 style="margin:0 0 6px 0;font-family:${font};font-size:22px;line-height:1.3;font-weight:700;color:${ink};letter-spacing:-0.01em;">${safeName} sent you a project enquiry</h1>
               <p style="margin:0;font-family:${font};font-size:14px;line-height:1.6;color:${muted};">Submitted through the contact form on ${safeDomain}. Hit <strong style="color:${bodyText};font-weight:600;">Reply</strong> in your mail client — it goes straight to ${safeName}.</p>
             </td>
           </tr>
@@ -162,6 +170,8 @@ export function buildContactNotification(input: ContactNotificationInput): Conta
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
                 ${detailRow("From", safeName)}
                 ${detailRow("Email", `<a href="mailto:${safeEmail}" style="color:${accentDeep};text-decoration:none;font-weight:500;">${safeEmail}</a>${senderDomain ? `<span style="color:${muted};font-size:13px;"> &nbsp;&middot;&nbsp; ${escapeHtml(senderDomain)}</span>` : ""}`)}
+                ${company ? detailRow("Company", escapeHtml(company)) : ""}
+                ${budget ? detailRow("Budget", escapeHtml(budget)) : ""}
                 ${detailRow("Received", escapeHtml(received.long), true)}
               </table>
             </td>
@@ -170,7 +180,7 @@ export function buildContactNotification(input: ContactNotificationInput): Conta
           <!-- Message -->
           <tr>
             <td style="padding:22px 32px 6px 32px;">
-              <div style="font-family:${font};font-size:11.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${muted};margin:0 0 10px 0;">Message</div>
+              <div style="font-family:${font};font-size:11.5px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:${muted};margin:0 0 10px 0;">What they want to build or automate</div>
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse:collapse;">
                 <tr>
                   <td width="4" bgcolor="${accent}" style="width:4px;background-color:${accent};border-radius:4px 0 0 4px;"></td>
@@ -219,10 +229,12 @@ export function buildContactNotification(input: ContactNotificationInput): Conta
     "",
     `From:      ${name}`,
     `Email:     ${email}`,
+    ...(company ? [`Company:   ${company}`] : []),
+    ...(budget ? [`Budget:    ${budget}`] : []),
     `Received:  ${received.long}`,
     "",
-    "MESSAGE",
-    "-------",
+    "WHAT THEY WANT TO BUILD OR AUTOMATE",
+    "-----------------------------------",
     message,
     "",
     "-------",

@@ -52,10 +52,19 @@ function SkillBar({ label, level }: { label: string; level: number }) {
 
 export function Expertise() {
   return (
-    <section id="about" className="bg-surface py-20 lg:py-24">
+    <section id="stack" className="bg-bg py-20 lg:py-24">
       <div className="container-site">
         <Reveal>
-          <SectionHeading eyebrow="Tools & Skills" title="My Expertise" />
+          <SectionHeading
+            eyebrow="Technical stack"
+            title="What it is built with"
+            action={
+              <p className="max-w-[44ch] text-[13.5px] leading-[1.65] text-body">
+                For the engineers on your side. Everything above is delivered with this stack, and the
+                full list is in the CV.
+              </p>
+            }
+          />
         </Reveal>
 
         <div className="mt-9 grid gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-14">

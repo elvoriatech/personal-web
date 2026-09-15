@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { documents, navLinks, site, socials } from "@/content/site";
-import { services, type Service } from "@/content/services";
+import { services } from "@/content/services";
+import { positioning } from "@/content/business";
+import { serviceIcons } from "./Services";
 import { Logo } from "./Logo";
 import { Reveal } from "@/components/ui/Reveal";
 
@@ -35,18 +37,12 @@ const downloadIcon = (
   <path d="M12 3v10m0 0l-4-4m4 4l4-4M4 19h16" />
 );
 
-const serviceIcons: Record<Service["icon"], React.ReactNode> = {
-  web: <><rect x="2.5" y="4" width="19" height="15" rx="2.5" /><path d="M2.5 8.5h19" /></>,
-  mobile: <><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" /><path d="M10.6 18.6h2.8" /></>,
-  desktop: <><rect x="2.5" y="4" width="19" height="12.5" rx="2" /><path d="M8 20.5h8M12 16.5v4" /></>,
-  ai: <><circle cx="12" cy="12" r="3.4" /><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /></>,
-};
 
 export function Footer() {
   const year = new Date().getFullYear();
   const activeSocials = socials.filter((s) => s.href.length > 0);
   // Experience lives on the page but is dropped from the footer index.
-  const quickLinks = navLinks.filter((l) => l.label !== "Experience");
+  const quickLinks = navLinks.filter((l) => l.label !== "Home");
 
   return (
     <footer className="border-t border-line bg-bg">
@@ -55,8 +51,8 @@ export function Footer() {
         <div>
           <Logo />
           <p className="mt-4 max-w-[32ch] text-[13.5px] leading-[1.7] text-body">
-            Building enterprise-grade web, mobile and desktop products — and the
-            AI systems that make them smarter.
+            {positioning.title}. Production-ready AI agents, RAG assistants and LLM
+            products for startups and businesses — from idea to deployment.
           </p>
           <ul className="mt-4 flex flex-wrap gap-2">
             {documents.map((doc) => (
@@ -125,7 +121,7 @@ export function Footer() {
             {services.map((s) => (
               <li key={s.title}>
                 <Link
-                  href="/#services"
+                  href={`/#${s.id}`}
                   className="inline-flex items-center gap-2.5 py-1 text-[13.5px] text-body transition-colors hover:text-accent-deep"
                 >
                   <Icon path={serviceIcons[s.icon]} className="shrink-0 text-accent-deep" />

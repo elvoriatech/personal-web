@@ -34,9 +34,12 @@ export const site = {
   role: "Senior Software Engineer",
   roleSecondary: "AI Engineer",
   initials: "ZA",
+  /** Professional title — used on the CV, in outreach email and under the hero headline. */
   tagline: "Senior Software Engineer & Applied AI Engineer",
+  /** Commercial positioning — used in page titles, meta descriptions and structured data. */
+  seoTitle: "AI Engineer & AI Automation Consultant in Germany",
   description:
-    "Senior Software Engineer with 8+ years architecting enterprise-grade applications, now specialising in Applied AI Engineering — RAG systems, multi-agent workflows and scalable microservices on AWS and Kubernetes.",
+    "Zahoor Ahmed builds production-ready AI systems for businesses: AI agents, RAG knowledge assistants, LLM products and workflow automation, deployed on AWS. Senior software engineer with 8+ years in production. Free 30-minute discovery call.",
   url: resolveSiteUrl(),
   location: "Mülheim-Kärlich, Germany",
   email: "zahoor_ahmed143@hotmail.com",
@@ -77,10 +80,10 @@ export const socials: { label: string; href: string }[] = [
  */
 export const navLinks = [
   { label: "Home", href: "/#home" },
-  { label: "About", href: "/#about" },
   { label: "Services", href: "/#services" },
-  { label: "Projects", href: "/#projects" },
-  { label: "Experience", href: "/#experience" },
+  { label: "Work", href: "/#work" },
+  { label: "Pricing", href: "/#pricing" },
+  { label: "About", href: "/#about" },
   { label: "Blog", href: "/blog" },
   { label: "Contact", href: "/#contact" },
 ] as const;
@@ -98,18 +101,31 @@ export const stats = [
   { value: "3", label: "Countries Delivered" },
 ];
 
+/**
+ * The hero sells the outcome first (what a client gets), then states who is
+ * behind it. The professional title stays visible for recruiters.
+ */
 export const hero = {
-  eyebrow: "Hello, I'm",
-  headline: "Zahoor Ahmed",
-  subheadLead: "Senior Software Engineer &",
-  subheadAccent: "Applied AI",
-  subheadTail: "Engineer",
-  body: "I architect enterprise-grade applications and production-ready AI systems — RAG pipelines, multi-agent workflows and scalable microservices on AWS and Kubernetes.",
-  primaryCta: { label: "View My Work", href: "/#projects" },
+  eyebrow: "Zahoor Ahmed · Senior Software Engineer & Applied AI Engineer",
+  headline: "I build production-ready",
+  headlineAccent: "AI systems",
+  headlineTail: "for businesses.",
+  body: "I help startups and businesses build AI agents, RAG applications, LLM-powered products and workflow automations — from idea to production on AWS.",
+  capabilities: ["AI Agents", "RAG", "LLM Applications", "MCP", "Automation", "AWS"],
+  question: "Have an AI idea or a process you want to automate?",
+  primaryCta: { label: "Book a free consultation", href: "/#contact" },
+  secondaryCta: { label: "See case studies", href: "/#work" },
   // Served by the document builder in whichever template is chosen in the admin,
   // so the CV can never be older than the content.
-  secondaryCta: { label: "Download CV", href: "/api/documents/resume" },
+  cvLink: { label: "Download CV", href: "/api/documents/resume" },
 } as const;
+
+/** One line that replaces the long career list for visitors who are clients, not recruiters. */
+export const careerSummary =
+  "8+ years building production software across fleet telematics, e-commerce, airline technology and AI — in Germany, the UAE and Pakistan.";
+
+/** Roles shown on the homepage; the full history stays in the CV. */
+export const featuredRoleCount = 3;
 
 /**
  * Replaces the template's client testimonial. Zahoor has no published

@@ -15,19 +15,21 @@ export async function submitContact(
   const submitted: ContactValues = {
     name: String(formData.get("name") ?? ""),
     email: String(formData.get("email") ?? ""),
+    company: String(formData.get("company") ?? ""),
     message: String(formData.get("message") ?? ""),
+    budget: String(formData.get("budget") ?? ""),
   };
 
   const parsed = contactSchema.safeParse({
     ...submitted,
-    company: formData.get("company") ?? "",
+    website: formData.get("website") ?? "",
   });
 
   if (!parsed.success) {
     const flat = parsed.error.flatten().fieldErrors;
 
     /* A filled honeypot is a bot. Report success so it learns nothing. */
-    if (flat.company) return { status: "success", message: "Thanks — your message is on its way." };
+    if (flat.website) return { status: "success", message: "Thanks — your project is on its way." };
 
     return {
       status: "error",
@@ -35,13 +37,15 @@ export async function submitContact(
       fieldErrors: {
         name: flat.name?.[0],
         email: flat.email?.[0],
+        company: flat.company?.[0],
         message: flat.message?.[0],
+        budget: flat.budget?.[0],
       },
       values: submitted,
     };
   }
 
-  const { name, email, message } = parsed.data;
+  const { name, email, company, message, budget } = parsed.data;
 
   const headerList = await headers();
   const ip =
@@ -69,7 +73,7 @@ export async function submitContact(
 
   try {
     const resend = new Resend(apiKey);
-    const notification = buildContactNotification({ name, email, message });
+    const notification = buildContactNotification({ name, email, company, message, budget });
     const { error } = await resend.emails.send({
       /* Resend requires a verified domain for a custom sender. Until one
          exists, onboarding@resend.dev delivers to the account owner. */
@@ -90,7 +94,10 @@ export async function submitContact(
       };
     }
 
-    return { status: "success", message: "Thanks — your message is on its way. I'll reply shortly." };
+    return {
+      status: "success",
+      message: "Thanks — your project is on its way. I'll reply within two working days with a call slot.",
+    };
   } catch (err) {
     console.error("[contact] Unexpected failure:", err);
     return {

@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Poppins } from "next/font/google";
-import { site, socials } from "@/content/site";
+import { site } from "@/content/site";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { personJsonLd, websiteJsonLd } from "@/lib/seo/structuredData";
 import "./globals.css";
 
 const inter = Inter({
@@ -19,7 +21,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} — ${site.tagline}`,
+    default: `${site.name} — ${site.seoTitle}`,
     template: `%s — ${site.name}`,
   },
   description: site.description,
@@ -28,32 +30,37 @@ export const metadata: Metadata = {
   creator: site.name,
   keywords: [
     "Zahoor Ahmed",
+    "AI engineer Germany",
+    "AI automation consultant",
+    "AI agents for business",
+    "RAG development",
+    "LLM application development",
+    "AI MVP development",
+    "AI integration consultant",
+    "Model Context Protocol",
+    "LangChain developer",
+    "workflow automation with AI",
+    "freelance AI engineer Koblenz",
     "Senior Software Engineer",
-    "AI Engineer",
-    "RAG",
-    "LangChain",
-    "Next.js",
-    "Angular",
-    "NestJS",
-    "AWS",
-    "Kubernetes",
-    "Website development",
-    "Mobile app development",
-    "Desktop application development",
-    "Germany",
+    "AWS Kubernetes",
   ],
+  category: "technology",
+  // Paste the token from Search Console → Settings → Ownership verification → HTML tag.
+  verification: process.env.GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.GOOGLE_SITE_VERIFICATION }
+    : undefined,
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: site.url,
     siteName: site.name,
-    title: `${site.name} — ${site.tagline}`,
+    title: `${site.name} — ${site.seoTitle}`,
     description: site.description,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${site.name} — ${site.tagline}`,
+    title: `${site.name} — ${site.seoTitle}`,
     description: site.description,
   },
   robots: {
@@ -68,41 +75,6 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-const personJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Person",
-  name: site.name,
-  jobTitle: "Senior Software Engineer · AI Engineer",
-  description: site.description,
-  url: site.url,
-  // Public profiles, so search engines can tie them to this identity.
-  sameAs: socials.map((s) => s.href).filter(Boolean),
-  email: `mailto:${site.email}`,
-  telephone: site.phone,
-  address: {
-    "@type": "PostalAddress",
-    addressLocality: "Mülheim-Kärlich",
-    addressCountry: "DE",
-  },
-  knowsLanguage: ["en", "de", "ur"],
-  knowsAbout: [
-    "TypeScript",
-    "Angular",
-    "React",
-    "Next.js",
-    "Node.js",
-    "NestJS",
-    "Python",
-    "AWS",
-    "Kubernetes",
-    "Retrieval-Augmented Generation",
-    "LangChain",
-  ],
-  alumniOf: {
-    "@type": "CollegeOrUniversity",
-    name: "Virtual University of Pakistan",
-  },
-};
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -121,12 +93,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to content
         </a>
         {children}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(personJsonLd).replace(/</g, "\\u003c"),
-          }}
-        />
+        <JsonLd data={[personJsonLd(), websiteJsonLd()]} />
       </body>
     </html>
   );

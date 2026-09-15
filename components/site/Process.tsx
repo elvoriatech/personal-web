@@ -7,10 +7,10 @@ export function Process() {
     <section id="process" className="bg-surface py-20 lg:py-24">
       <div className="container-site">
         <Reveal>
-          <SectionHeading eyebrow="My Process" title="A Simple, Effective Process" />
+          <SectionHeading eyebrow="How it works" title="From first call to production in four steps" />
         </Reveal>
 
-        <ol className="relative mt-12 grid gap-9 sm:grid-cols-2 lg:grid-cols-5 lg:gap-5">
+        <ol className="relative mt-12 grid gap-9 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
           {/* connecting rail, desktop only */}
           <span
             aria-hidden="true"
@@ -26,7 +26,7 @@ export function Process() {
                 <h3 className="mt-4 font-display text-[14.5px] font-semibold text-ink">
                   {step.title}
                 </h3>
-                <p className="mt-1.5 max-w-[24ch] text-[12.5px] leading-[1.6] text-body">
+                <p className="mt-1.5 max-w-[30ch] text-[13px] leading-[1.6] text-body">
                   {step.body}
                 </p>
               </li>

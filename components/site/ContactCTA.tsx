@@ -1,4 +1,5 @@
 import { site } from "@/content/site";
+import { discoveryCall } from "@/content/business";
 import { Reveal } from "@/components/ui/Reveal";
 import { ContactForm } from "./ContactForm";
 
@@ -32,7 +33,7 @@ const details = [
 
 export function ContactCTA() {
   return (
-    <section id="contact" className="bg-surface pb-20 lg:pb-24">
+    <section id="contact" className="bg-surface py-20 lg:py-24">
       <div className="container-site">
         <Reveal>
           <div className="relative overflow-hidden rounded-[22px] border border-line bg-bg-violet px-6 py-10 sm:px-10 lg:px-12 lg:py-12">
@@ -49,15 +50,25 @@ export function ContactCTA() {
 
             <div className="relative grid gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-14">
               <div>
-                <p className="eyebrow">Let&apos;s work together</p>
+                <p className="eyebrow">{discoveryCall.eyebrow}</p>
                 <h2 className="mt-2 font-display text-[clamp(26px,3.4vw,36px)] font-semibold leading-tight">
-                  Have a Project in Mind?
+                  {discoveryCall.title}
                 </h2>
-                <p className="mt-3 max-w-[38ch] text-[14.5px] leading-[1.7] text-body">
-                  I&apos;m available for new projects and collaborations — web,
-                  mobile, desktop or AI. Tell me what you&apos;re building and
-                  I&apos;ll come back to you within two working days.
+                <p className="mt-2 font-display text-[13px] font-semibold uppercase tracking-[0.1em] text-accent-deep">
+                  {discoveryCall.meta}
                 </p>
+                <p className="mt-4 text-[14.5px] text-body">{discoveryCall.intro}</p>
+                <ul className="mt-2 space-y-1.5">
+                  {discoveryCall.topics.map((t) => (
+                    <li
+                      key={t}
+                      className="relative pl-4 text-[14px] leading-[1.6] text-body before:absolute before:left-0 before:top-[0.62em] before:h-1.5 before:w-1.5 before:rounded-full before:bg-accent/70"
+                    >
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-4 max-w-[40ch] text-[14px] leading-[1.7] text-body">{discoveryCall.promise}</p>
 
                 <ul className="mt-7 space-y-4">
                   {details.map((item) => (

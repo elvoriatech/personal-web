@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { site } from "@/content/site";
 
-export const alt = `${site.name} — ${site.tagline}`;
+export const alt = `${site.name} — ${site.seoTitle}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -71,10 +71,9 @@ export default function OpengraphImage() {
               marginTop: 12,
             }}
           >
-            Senior Software Engineer &amp;{" "}
-            <span style={{ color: "#6d4fd0", marginLeft: 12 }}>
-              Applied AI Engineer
-            </span>
+            Production-ready{" "}
+            <span style={{ color: "#6d4fd0", marginLeft: 12 }}>AI systems</span>
+            <span style={{ marginLeft: 12 }}>for businesses</span>
           </div>
         </div>
 
@@ -85,7 +84,7 @@ export default function OpengraphImage() {
             color: "#5f5a68",
           }}
         >
-          Websites · Mobile apps · Desktop applications · AI engineering
+          AI agents · RAG · LLM products · Automation · AWS — Germany & remote
         </div>
       </div>
     ),

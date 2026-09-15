@@ -20,7 +20,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
             {site.name}
           </span>
           <span className="mt-1 whitespace-nowrap font-display text-[9px] uppercase tracking-[0.22em] text-muted">
-            Software Engineer
+            AI Engineer
           </span>
         </span>
       )}
