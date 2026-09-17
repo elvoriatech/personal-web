@@ -3,6 +3,7 @@ import type { AttachmentId } from "@/lib/campaigns/attachments";
 import { sendPersonalEmail } from "@/lib/campaigns/personal";
 import { coerceEmailTheme } from "@/lib/campaigns/themes";
 import { coerceTransportChoice } from "@/lib/mail/transports";
+import { coerceDocumentFormat } from "@/lib/documents/types";
 
 export async function POST(request: Request) {
   const denied = await requireAdmin();
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
       subject?: string;
       body?: string;
       attachments?: AttachmentId[];
+      attachmentFormat?: string;
       ccSelf?: boolean;
       theme?: string;
       via?: string;
@@ -24,6 +26,7 @@ export async function POST(request: Request) {
       subject: body.subject ?? "",
       body: body.body ?? "",
       attachments: body.attachments ?? [],
+      attachmentFormat: coerceDocumentFormat(body.attachmentFormat),
       ccSelf: body.ccSelf ?? true,
       theme: coerceEmailTheme(body.theme),
       via: coerceTransportChoice(body.via),

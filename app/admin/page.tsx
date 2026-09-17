@@ -56,10 +56,10 @@ export default async function AdminOverview() {
         </h2>
         <div className="mt-3 flex flex-wrap gap-2">
           {[
-            { href: "/api/documents/resume?variant=ats", label: "Résumé — Classic" },
-            { href: "/api/documents/resume?variant=design", label: "Résumé — Modern" },
-            { href: "/api/documents/resume?variant=compact", label: "Résumé — Compact" },
-            { href: "/api/documents/cover-letter", label: "Cover letter" },
+            { href: "/api/documents/resume?variant=ats", label: "Résumé — Classic (PDF)" },
+            { href: "/api/documents/resume?variant=design", label: "Résumé — Modern (PDF)" },
+            { href: "/api/documents/resume?variant=compact", label: "Résumé — Compact (PDF)" },
+            { href: "/api/documents/cover-letter", label: "Cover letter (PDF)" },
           ].map((d) => (
             <a
               key={d.href}

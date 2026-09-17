@@ -4,7 +4,17 @@ import { useCallback, useState } from "react";
 import { EmailPreviewDialog } from "@/components/admin/EmailPreviewDialog";
 import { Card, Field, SmallButton, TextArea } from "@/components/admin/Fields";
 import { ThemePicker } from "@/components/admin/ThemePicker";
-import { ATTACHMENT_OPTIONS, type AttachmentId } from "@/lib/campaigns/attachments";
+import {
+  ATTACHMENT_OPTIONS,
+  attachmentFilename,
+  type AttachmentId,
+} from "@/lib/campaigns/attachments";
+import { FormatPicker } from "@/components/admin/FormatPicker";
+import {
+  DEFAULT_DOCUMENT_FORMAT,
+  DOCUMENT_FORMAT_LABELS,
+  type DocumentFormat,
+} from "@/lib/documents/types";
 import { DEFAULT_EMAIL_THEME, type EmailTheme } from "@/lib/campaigns/themes";
 import { TransportPicker } from "@/components/admin/TransportPicker";
 import type { MailStatus, MailTransport } from "@/lib/mail/transports";
@@ -27,6 +37,8 @@ export function PersonalEmailForm({
   const [body, setBody] = useState("");
   const [theme, setTheme] = useState<EmailTheme>(DEFAULT_EMAIL_THEME);
   const [attachments, setAttachments] = useState<AttachmentId[]>([defaultAttachment]);
+  const [attachmentFormat, setAttachmentFormat] =
+    useState<DocumentFormat>(DEFAULT_DOCUMENT_FORMAT);
   const [ccSelf, setCcSelf] = useState(true);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -81,7 +93,16 @@ export function PersonalEmailForm({
       const res = await fetch("/api/admin/campaigns/personal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to, subject, body, attachments, ccSelf, theme, via: via ?? "auto" }),
+        body: JSON.stringify({
+          to,
+          subject,
+          body,
+          attachments,
+          attachmentFormat,
+          ccSelf,
+          theme,
+          via: via ?? "auto",
+        }),
       });
       const data = (await res.json()) as { ok: true; attached: string[] } | { ok: false; error: string };
 
@@ -149,7 +170,7 @@ export function PersonalEmailForm({
         <ul className="space-y-2.5">
           {ATTACHMENT_OPTIONS.map((option) => (
             <li key={option.id}>
-              <label className="flex items-center gap-2.5 text-[13.5px] text-body">
+              <label className="flex flex-wrap items-center gap-2.5 text-[13.5px] text-body">
                 <input
                   type="checkbox"
                   checked={attachments.includes(option.id)}
@@ -157,11 +178,26 @@ export function PersonalEmailForm({
                   className="h-4 w-4 accent-[var(--accent)]"
                 />
                 {option.label}
-                <span className="text-[11.5px] text-muted">({option.filename})</span>
+                <span className="text-[11.5px] text-muted">
+                  ({attachmentFilename(option.id, attachmentFormat)})
+                </span>
               </label>
             </li>
           ))}
         </ul>
+        <div className="border-t border-line pt-3.5">
+          <FormatPicker
+            value={attachmentFormat}
+            onChange={setAttachmentFormat}
+            disabled={attachments.length === 0}
+          />
+          {attachments.length > 0 && (
+            <p className="mt-2 text-[11.5px] text-muted">
+              {attachments.length === 1 ? "One document" : `${attachments.length} documents`} will be
+              attached as {DOCUMENT_FORMAT_LABELS[attachmentFormat]}.
+            </p>
+          )}
+        </div>
         <label className="flex items-center gap-2.5 border-t border-line pt-3 text-[13.5px] text-body">
           <input
             type="checkbox"

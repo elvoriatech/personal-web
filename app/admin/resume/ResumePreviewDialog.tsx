@@ -3,9 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { DownloadCurrentButton } from "@/components/admin/DownloadCurrentButton";
 import { ResumeSheet } from "@/components/documents/ResumeSheet";
+import { FormatToggle } from "@/components/admin/FormatToggle";
 import {
+  DEFAULT_DOCUMENT_FORMAT,
+  DOCUMENT_FORMAT_LABELS,
   RESUME_VARIANTS,
   RESUME_VARIANT_LABELS as LABEL,
+  type DocumentFormat,
   type ResumeDoc,
   type ResumeVariant,
 } from "@/lib/documents/types";
@@ -30,6 +34,7 @@ export function ResumePreviewDialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [override, setOverride] = useState<ResumeVariant | null>(null);
+  const [format, setFormat] = useState<DocumentFormat>(DEFAULT_DOCUMENT_FORMAT);
   const variant = override ?? callerVariant;
 
   useEffect(() => {
@@ -87,8 +92,9 @@ export function ResumePreviewDialog({
                 </button>
               ))}
             </div>
-            <DownloadCurrentButton doc="resume" payload={resume} variant={variant}>
-              Download this version
+            <FormatToggle value={format} onChange={setFormat} label="Download format" />
+            <DownloadCurrentButton doc="resume" payload={resume} variant={variant} format={format}>
+              Download {DOCUMENT_FORMAT_LABELS[format]}
             </DownloadCurrentButton>
             <button
               type="button"
@@ -117,8 +123,8 @@ export function ResumePreviewDialog({
 
         <footer className="border-t border-line px-5 py-2.5 text-[11.5px] text-muted">
           The preview and the download both use what is in the editor right now
-          {dirty ? " (including unsaved edits)" : ""}. Word uses Calibri, so line breaks will differ
-          slightly.
+          {dirty ? " (including unsaved edits)" : ""}. Line breaks shift a little between formats:
+          the PDF is set in Helvetica, Word in Calibri.
         </footer>
       </div>
     </dialog>

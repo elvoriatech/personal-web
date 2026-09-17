@@ -3,9 +3,13 @@
 import { useId, useRef, useState } from "react";
 import { Card } from "@/components/admin/Fields";
 import { PHOTO_SHAPE_CLASS } from "@/components/documents/ResumeSheet";
+import { FormatToggle } from "@/components/admin/FormatToggle";
 import {
+  DEFAULT_DOCUMENT_FORMAT,
+  DOCUMENT_FORMAT_LABELS,
   PHOTO_SHAPES,
   RESUME_VARIANT_LABELS,
+  type DocumentFormat,
   type PhotoShape,
   type ResumeVariant,
 } from "@/lib/documents/types";
@@ -79,6 +83,7 @@ export function PresentationCard({
 }) {
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
+  const [format, setFormat] = useState<DocumentFormat>(DEFAULT_DOCUMENT_FORMAT);
   const fileRef = useRef<HTMLInputElement>(null);
   const radioName = useId();
   const shapeName = useId();
@@ -263,7 +268,6 @@ export function PresentationCard({
       {/* ------------------------------ downloads ----------------------------- */}
       {/* Plain anchors on purpose: these are file downloads from route handlers.
           <Link> would attempt a client-side RSC navigation and prefetch a .docx. */}
-      {/* eslint-disable @next/next/no-html-link-for-pages */}
       <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
         <button
           type="button"
@@ -276,24 +280,25 @@ export function PresentationCard({
           </svg>
           Preview templates
         </button>
-        <span className="ml-2 mr-1 text-[12px] text-muted">Download the last saved version:</span>
+        <FormatToggle value={format} onChange={setFormat} label="Download format" />
+        <span className="mr-1 text-[12px] text-muted">Last saved version:</span>
         <a
-          href="/api/documents/resume?variant=ats"
+          href={`/api/documents/resume?variant=ats&format=${format}`}
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          {RESUME_VARIANT_LABELS.ats} .docx
+          {RESUME_VARIANT_LABELS.ats} {DOCUMENT_FORMAT_LABELS[format]}
         </a>
         <a
-          href="/api/documents/resume?variant=design"
+          href={`/api/documents/resume?variant=design&format=${format}`}
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          {RESUME_VARIANT_LABELS.design} .docx
+          {RESUME_VARIANT_LABELS.design} {DOCUMENT_FORMAT_LABELS[format]}
         </a>
         <a
-          href="/api/documents/resume?variant=compact"
+          href={`/api/documents/resume?variant=compact&format=${format}`}
           className="inline-flex min-h-[36px] items-center rounded-pill border border-line bg-surface px-4 text-[11.5px] font-semibold uppercase tracking-[0.08em] text-body hover:border-accent hover:text-accent-deep"
         >
-          {RESUME_VARIANT_LABELS.compact} .docx
+          {RESUME_VARIANT_LABELS.compact} {DOCUMENT_FORMAT_LABELS[format]}
         </a>
         <a
           href="/resume"
@@ -304,7 +309,6 @@ export function PresentationCard({
           Public page ↗
         </a>
       </div>
-      {/* eslint-enable @next/next/no-html-link-for-pages */}
     </Card>
   );
 }

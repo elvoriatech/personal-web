@@ -17,12 +17,44 @@ export const RESUME_VARIANT_LABELS: Record<ResumeVariant, string> = {
   compact: "Compact",
 };
 
-/** Download names. The Classic build is the default, so it carries the plain name. */
-export const RESUME_VARIANT_FILENAMES: Record<ResumeVariant, string> = {
-  ats: "Zahoor_Ahmed_Resume.docx",
-  design: "Zahoor_Ahmed_Resume_Modern.docx",
-  compact: "Zahoor_Ahmed_Resume_Compact.docx",
+/**
+ * File format a document is delivered in. PDF is the default everywhere: it
+ * looks identical on every machine and is what recruiters and clients expect
+ * as an attachment. Word stays available for anyone who asks to edit it.
+ */
+export type DocumentFormat = "pdf" | "docx";
+export const DOCUMENT_FORMATS: DocumentFormat[] = ["pdf", "docx"];
+export const DEFAULT_DOCUMENT_FORMAT: DocumentFormat = "pdf";
+
+export const DOCUMENT_FORMAT_LABELS: Record<DocumentFormat, string> = {
+  pdf: "PDF",
+  docx: "Word",
 };
+
+export const DOCUMENT_FORMAT_HINTS: Record<DocumentFormat, string> = {
+  pdf: "Opens the same everywhere. The safe choice for an attachment.",
+  docx: "Editable in Word. Send only when someone asks for it.",
+};
+
+export const DOCUMENT_CONTENT_TYPES: Record<DocumentFormat, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+};
+
+export function coerceDocumentFormat(value: unknown): DocumentFormat {
+  return value === "docx" ? "docx" : DEFAULT_DOCUMENT_FORMAT;
+}
+
+/** Download names without an extension. Classic is the default, so it has the plain name. */
+export const RESUME_VARIANT_BASENAMES: Record<ResumeVariant, string> = {
+  ats: "Zahoor_Ahmed_Resume",
+  design: "Zahoor_Ahmed_Resume_Modern",
+  compact: "Zahoor_Ahmed_Resume_Compact",
+};
+
+export function resumeFilename(variant: ResumeVariant, format: DocumentFormat): string {
+  return `${RESUME_VARIANT_BASENAMES[variant]}.${format}`;
+}
 
 /** How the two-column photo is cropped. */
 export type PhotoShape = "square" | "circle" | "rounded";

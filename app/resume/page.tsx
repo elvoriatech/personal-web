@@ -31,7 +31,16 @@ export default async function ResumePage() {
   // The template chosen in the admin leads; the others stay one click away.
   const all = { ats, design, compact };
   const preferred = resume.preferredVariant ?? "ats";
-  const downloads = [all[preferred], ...(["ats", "design", "compact"] as const).filter((v) => v !== preferred).map((v) => all[v])];
+  const order = [preferred, ...(["ats", "design", "compact"] as const).filter((v) => v !== preferred)];
+  const downloads = [
+    ...order.map((v) => all[v]),
+    // Every link above serves a PDF; this one covers anyone who wants to edit it.
+    {
+      href: `/api/documents/resume?variant=${preferred}&format=docx`,
+      label: "Word",
+      hint: `Editable .docx of the ${LABEL[preferred]} theme.`,
+    },
+  ];
 
   return (
     <DocumentChrome title="Résumé" downloads={downloads}>

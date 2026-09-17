@@ -16,7 +16,8 @@ export default async function CoverLetterPage() {
     <DocumentChrome
       title="Cover Letter"
       downloads={[
-        { href: "/api/documents/cover-letter", label: "Download .docx" },
+        { href: "/api/documents/cover-letter", label: "Download PDF", hint: "Opens the same on every device." },
+        { href: "/api/documents/cover-letter?format=docx", label: "Word", hint: "Editable .docx version." },
       ]}
     >
       <CoverLetterSheet letter={coverLetter} />

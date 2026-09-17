@@ -1,13 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DownloadCurrentButton } from "@/components/admin/DownloadCurrentButton";
+import { FormatToggle } from "@/components/admin/FormatToggle";
+import {
+  DEFAULT_DOCUMENT_FORMAT,
+  DOCUMENT_FORMAT_LABELS,
+  type DocumentFormat,
+} from "@/lib/documents/types";
 import { CoverLetterSheet, coverLetterValues } from "@/components/documents/CoverLetterSheet";
 import type { CoverLetterDoc } from "@/lib/documents/types";
 
 /**
  * The letter exactly as the editor holds it — company and role filled in —
- * with a download that builds the .docx from that same state.
+ * with a download that builds the file from that same state, in either format.
  */
 export function CoverLetterPreviewDialog({
   open,
@@ -21,6 +27,7 @@ export function CoverLetterPreviewDialog({
   onClose: () => void;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const [format, setFormat] = useState<DocumentFormat>(DEFAULT_DOCUMENT_FORMAT);
   const values = coverLetterValues(letter);
   const targeted = Boolean(letter.targetCompany.trim() || letter.targetRole.trim());
 
@@ -57,8 +64,9 @@ export function CoverLetterPreviewDialog({
             </h2>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <DownloadCurrentButton doc="cover-letter" payload={letter}>
-              Download this version
+            <FormatToggle value={format} onChange={setFormat} label="Download format" />
+            <DownloadCurrentButton doc="cover-letter" payload={letter} format={format}>
+              Download {DOCUMENT_FORMAT_LABELS[format]}
             </DownloadCurrentButton>
             <button
               type="button"

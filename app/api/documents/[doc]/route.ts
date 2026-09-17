@@ -1,20 +1,20 @@
 import { requireAdmin } from "@/lib/campaigns/guard";
 import {
-  buildCoverLetterDocx,
-  buildResumeCompactDocx,
-  buildResumeDesignDocx,
-  buildResumeDocx,
-} from "@/lib/documents/docx";
+  buildCoverLetterBuffer,
+  buildResumeBuffer,
+  coverLetterFilename,
+  resumeFilename,
+} from "@/lib/documents/build";
 import { getDocuments } from "@/lib/documents/store";
 import {
+  DOCUMENT_CONTENT_TYPES,
   RESUME_VARIANTS,
-  RESUME_VARIANT_FILENAMES,
+  coerceDocumentFormat,
   type CoverLetterDoc,
+  type DocumentFormat,
   type ResumeDoc,
   type ResumeVariant,
 } from "@/lib/documents/types";
-
-const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 /**
  * GET  — the saved document. Public: the /resume and /cover-letter pages and
@@ -22,18 +22,28 @@ const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingm
  * POST — admin only. Builds from the document posted in `payload`, so the
  *        editor can download exactly what it shows without saving first.
  *
+ * `?format=docx` switches to Word; without it a PDF is served, which is what
+ * a recruiter or client expects to receive.
+ *
  * Params are Promises in Next 16.
  */
 export async function GET(request: Request, { params }: { params: Promise<{ doc: string }> }) {
   const { doc } = await params;
   const bundle = await getDocuments();
-  const requested = new URL(request.url).searchParams.get("variant");
+  const search = new URL(request.url).searchParams;
+  const format = coerceDocumentFormat(search.get("format"));
   // Explicit ?variant wins; without one, serve the template chosen in the admin.
-  const variant = pickVariant(requested, bundle.resume.preferredVariant);
+  const variant = pickVariant(search.get("variant"), bundle.resume.preferredVariant);
 
-  if (doc === "resume") return send(await buildResume(bundle.resume, variant), resumeFilename(variant));
+  if (doc === "resume") {
+    return send(await buildResumeBuffer(bundle.resume, variant, format), resumeFilename(variant, format), format);
+  }
   if (doc === "cover-letter") {
-    return send(await buildCoverLetterDocx(bundle.coverLetter), coverLetterFilename(bundle.coverLetter));
+    return send(
+      await buildCoverLetterBuffer(bundle.coverLetter, format),
+      coverLetterFilename(bundle.coverLetter, format),
+      format
+    );
   }
   return new Response("Unknown document", { status: 404 });
 }
@@ -52,14 +62,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ doc
   }
   if (!payload || typeof payload !== "object") return new Response("Malformed payload", { status: 400 });
 
+  const format = coerceDocumentFormat(form.get("format"));
+
   if (doc === "resume") {
     const resume = payload as ResumeDoc;
     const variant = pickVariant(String(form.get("variant") ?? ""), resume.preferredVariant);
-    return send(await buildResume(resume, variant), resumeFilename(variant));
+    return send(await buildResumeBuffer(resume, variant, format), resumeFilename(variant, format), format);
   }
   if (doc === "cover-letter") {
     const letter = payload as CoverLetterDoc;
-    return send(await buildCoverLetterDocx(letter), coverLetterFilename(letter));
+    return send(await buildCoverLetterBuffer(letter, format), coverLetterFilename(letter, format), format);
   }
   return new Response("Unknown document", { status: 404 });
 }
@@ -68,32 +80,10 @@ function pickVariant(requested: string | null, preferred: ResumeVariant | undefi
   return RESUME_VARIANTS.includes(requested as ResumeVariant) ? (requested as ResumeVariant) : (preferred ?? "ats");
 }
 
-function buildResume(resume: ResumeDoc, variant: ResumeVariant): Promise<Buffer> {
-  if (variant === "design") return buildResumeDesignDocx(resume);
-  if (variant === "compact") return buildResumeCompactDocx(resume);
-  return buildResumeDocx(resume);
-}
-
-function resumeFilename(variant: ResumeVariant): string {
-  return RESUME_VARIANT_FILENAMES[variant];
-}
-
-/** Adds the target company so downloads for different applications do not overwrite each other. */
-function coverLetterFilename(letter: CoverLetterDoc): string {
-  const company = letter.targetCompany
-    .trim()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^A-Za-z0-9]+/g, "_")
-    .replace(/^_+|_+$/g, "")
-    .slice(0, 40);
-  return company ? `Zahoor_Ahmed_Cover_Letter_${company}.docx` : "Zahoor_Ahmed_Cover_Letter.docx";
-}
-
-function send(buffer: Buffer, filename: string): Response {
+function send(buffer: Buffer, filename: string, format: DocumentFormat): Response {
   return new Response(new Uint8Array(buffer), {
     headers: {
-      "Content-Type": DOCX_TYPE,
+      "Content-Type": DOCUMENT_CONTENT_TYPES[format],
       "Content-Disposition": `attachment; filename="${filename}"`,
       "Cache-Control": "no-store",
     },

@@ -1,5 +1,7 @@
 "use client";
 
+import type { DocumentFormat } from "@/lib/documents/types";
+
 /**
  * Downloads a document built from the editor's CURRENT state, saved or not.
  *
@@ -11,6 +13,7 @@ export function DownloadCurrentButton({
   doc,
   payload,
   variant,
+  format = "pdf",
   children,
   className,
 }: {
@@ -18,6 +21,8 @@ export function DownloadCurrentButton({
   /** The document object as the editor holds it. */
   payload: unknown;
   variant?: "ats" | "design" | "compact";
+  /** PDF unless the caller asks for Word. */
+  format?: DocumentFormat;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -25,6 +30,7 @@ export function DownloadCurrentButton({
     <form method="post" action={`/api/documents/${doc}`} className="inline">
       <input type="hidden" name="payload" value={JSON.stringify(payload)} />
       {variant && <input type="hidden" name="variant" value={variant} />}
+      <input type="hidden" name="format" value={format} />
       <button
         type="submit"
         className={
