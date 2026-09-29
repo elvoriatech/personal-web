@@ -1,23 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { RECIPIENTS_PAGE_SIZE, SEND_JOB_POLL_MS } from "@/lib/campaigns/constants";
-import type { CampaignTemplate, Recipient, RecipientInput, SendJob } from "@/lib/campaigns/types";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { SEND_JOB_POLL_MS } from "@/lib/campaigns/constants";
+import type { CampaignTemplate, SendJob } from "@/lib/campaigns/types";
 import type { MailStatus } from "@/lib/mail/transports";
-import { AddRecipients } from "./_components/AddRecipients";
-import { api, recipientsUrl, type Notice, type RecipientQuery, type Stats } from "./_components/api";
+import { api, type Stats } from "./_components/api";
 import { JobProgress } from "./_components/JobProgress";
-import { RecipientsTable, type BulkAction } from "./_components/RecipientsTable";
+import { RecipientsTable } from "./_components/RecipientsTable";
 import { SendComposer, type SendRequest } from "./_components/SendComposer";
-
-type Page = { rows: Recipient[]; total: number };
-
-const INITIAL_QUERY: RecipientQuery = {
-  filter: "all",
-  search: "",
-  page: 1,
-  pageSize: RECIPIENTS_PAGE_SIZE,
-};
+import { useRecipientList, type RecipientPage } from "./_components/useRecipientList";
 
 export function CampaignsPanel({
   configured,
@@ -28,51 +20,16 @@ export function CampaignsPanel({
   mail,
 }: {
   configured: boolean;
-  initialPage: Page;
+  initialPage: RecipientPage;
   initialStats: Stats;
   initialJob: SendJob | null;
   templates: CampaignTemplate[];
   mail: MailStatus;
 }) {
-  const [page, setPage] = useState<Page>(initialPage);
-  const [query, setQuery] = useState<RecipientQuery>(INITIAL_QUERY);
-  const [stats, setStats] = useState<Stats>(initialStats);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const list = useRecipientList({ configured, initialPage, initialStats });
+  const { page, query, stats, selected, setSelected, busy, notice, setNotice, run, refresh } = list;
   const [job, setJob] = useState<SendJob | null>(initialJob);
-  const [busy, setBusy] = useState(false);
-  const [notice, setNotice] = useState<Notice>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // The latest query wins: a slow response for an old page must not overwrite
-  // the rows for the page the user has since moved to.
-  const requestSeq = useRef(0);
-
-  const load = useCallback(
-    async (q: RecipientQuery) => {
-      if (!configured) return;
-      const seq = ++requestSeq.current;
-      try {
-        const data = await api<Page & { stats: Stats }>(recipientsUrl(q));
-        if (seq !== requestSeq.current) return;
-        setPage({ rows: data.rows, total: data.total });
-        setStats(data.stats);
-      } catch (err) {
-        if (seq !== requestSeq.current) return;
-        setNotice({ tone: "error", text: err instanceof Error ? err.message : "Could not load recipients." });
-      }
-    },
-    [configured]
-  );
-
-  const refresh = useCallback(() => load(query), [load, query]);
-
-  const updateQuery = useCallback(
-    (next: Partial<RecipientQuery>) => {
-      const merged = { ...query, ...next };
-      setQuery(merged);
-      void load(merged);
-    },
-    [query, load]
-  );
 
   /* While a job is active, keep draining it and polling progress. The browser
      tab is the worker in development; in production Vercel Cron does this. */
@@ -98,37 +55,9 @@ export function CampaignsPanel({
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [job, refresh]);
-
-  async function run(fallback: string, fn: () => Promise<string | null>) {
-    setBusy(true);
-    setNotice(null);
-    try {
-      const text = await fn();
-      if (text) setNotice({ tone: "ok", text });
-    } catch (err) {
-      setNotice({ tone: "error", text: err instanceof Error ? err.message : fallback });
-    } finally {
-      setBusy(false);
-    }
-  }
+  }, [job, refresh, setNotice]);
 
   /* ------------------------------- handlers ------------------------------- */
-
-  const importRecipients = async (recipients: RecipientInput[]) => {
-    setBusy(true);
-    try {
-      const res = await api<{ inserted: number; updated: number; skipped: number }>(
-        "/api/admin/campaigns/recipients",
-        { method: "POST", body: JSON.stringify({ action: "import", recipients }) }
-      );
-      await load({ ...query, page: 1 });
-      setQuery((q) => ({ ...q, page: 1 }));
-      return res;
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const send = async (req: SendRequest) =>
     run("Send failed.", async () => {
@@ -148,40 +77,6 @@ export function CampaignsPanel({
       return `Queued ${res.job.totalCount} ${res.job.totalCount === 1 ? "email" : "emails"}. Progress is shown above.`;
     });
 
-  const audit = () =>
-    run("Audit failed.", async () => {
-      const res = await api<{ checked: number; invalid: number }>("/api/admin/campaigns/audit", {
-        method: "POST",
-        body: JSON.stringify({ limit: 50 }),
-      });
-      await refresh();
-      return res.checked
-        ? `Checked ${res.checked} domains — ${res.invalid} undeliverable. Run again to check more.`
-        : "Every recipient's domain has been checked.";
-    });
-
-  const bulk = (action: BulkAction) =>
-    run("Update failed.", async () => {
-      const ids = [...selected];
-      const body =
-        action === "mark_replied"
-          ? { action: "set_status", ids, status: "replied" }
-          : action === "reset"
-            ? { action: "set_status", ids, status: "not_sent" }
-            : { action, ids };
-      await api("/api/admin/campaigns/recipients", { method: "POST", body: JSON.stringify(body) });
-      setSelected(new Set());
-      await refresh();
-      const n = ids.length;
-      return {
-        opt_out: `${n} marked as opted out — they will never be emailed again.`,
-        opt_in: `${n} opted back in.`,
-        delete: `Deleted ${n} ${n === 1 ? "recipient" : "recipients"}.`,
-        mark_replied: `${n} marked as replied — their follow-ups are cancelled.`,
-        reset: `${n} reset to not sent.`,
-      }[action];
-    });
-
   const cancelJob = () =>
     run("Cancel failed.", async () => {
       if (!job) return null;
@@ -191,24 +86,6 @@ export function CampaignsPanel({
       });
       setJob(res.job);
       return "Send cancelled. Emails already sent are unaffected.";
-    });
-
-  const toggle = (id: string) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
-  const selectPage = (ids: string[], select: boolean) =>
-    setSelected((prev) => {
-      const next = new Set(prev);
-      for (const id of ids) {
-        if (select) next.add(id);
-        else next.delete(id);
-      }
-      return next;
     });
 
   /* -------------------------------- render -------------------------------- */
@@ -239,7 +116,12 @@ export function CampaignsPanel({
         </p>
       )}
 
-      <AddRecipients busy={busy} onImport={importRecipients} />
+      <p className="rounded-xl border border-line bg-surface px-4 py-3 text-[13px] text-body">
+        Adding or editing companies happens on the{" "}
+        <Link href="/admin/companies" className="font-semibold text-accent-deep underline-offset-2 hover:underline">
+          Companies page →
+        </Link>
+      </p>
 
       <SendComposer
         templates={templates}
@@ -249,7 +131,7 @@ export function CampaignsPanel({
         busy={busy}
         jobActive={jobActive}
         onSend={send}
-        onAudit={audit}
+        onAudit={list.audit}
       />
 
       <RecipientsTable
@@ -259,11 +141,11 @@ export function CampaignsPanel({
         stats={stats}
         selected={selected}
         busy={busy}
-        onQuery={updateQuery}
-        onToggle={toggle}
-        onSelectPage={selectPage}
+        onQuery={list.updateQuery}
+        onToggle={list.toggle}
+        onSelectPage={list.selectPage}
         onClearSelection={() => setSelected(new Set())}
-        onBulk={bulk}
+        onBulk={list.bulk}
       />
     </div>
   );

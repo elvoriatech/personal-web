@@ -28,6 +28,7 @@ const NAV: NavGroup[] = [
   {
     title: "Outreach",
     items: [
+      { href: "/admin/companies", label: "Companies", icon: "companies" },
       { href: "/admin/campaigns", label: "Campaigns", icon: "campaigns" },
       { href: "/admin/templates", label: "Outreach templates", icon: "templates" },
       { href: "/admin/email", label: "Send an email", icon: "send" },

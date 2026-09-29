@@ -13,6 +13,7 @@ export type NavIcon =
   | "templates"
   | "blog"
   | "campaigns"
+  | "companies"
   | "send";
 
 /**
@@ -118,6 +119,13 @@ function Icon({ name }: { name: NavIcon }): ReactNode {
         <svg {...common}>
           <path d="M2.5 9.5v-3l8-3.5v10l-8-3.5Z" />
           <path d="M10.5 6.5c1.2.3 2 1 2 1.5s-.8 1.2-2 1.5M5 10v2.5a.5.5 0 0 0 .5.5h1" />
+        </svg>
+      );
+    case "companies":
+      return (
+        <svg {...common}>
+          <path d="M2.5 13.5v-9a1 1 0 0 1 1-1h5a1 1 0 0 1 1 1v9M9.5 7.5h3a1 1 0 0 1 1 1v5M1.5 13.5h13" />
+          <path d="M5 6h2M5 8.5h2M5 11h2M11.5 10h0" />
         </svg>
       );
     case "send":

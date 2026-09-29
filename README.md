@@ -123,6 +123,17 @@ Six editable templates at `/admin/templates` for winning project work: cold
 outreach (web and AI), a single follow-up, replying to a posting, asking for a
 referral, and a post-call summary.
 
+**Sending to one company.** Add companies at `/admin/companies` (company name,
+contact person, website, email — or import a CSV). On any template, pick a
+company under *Send to*: the company fills `{{firstName}}`, `{{contactName}}`,
+`{{company}}`, `{{website}}` and `{{industry}}`; anything else the template
+uses (`{{observation}}`, `{{role}}`, `{{deadline}}`) gets a field of its own
+and Send stays disabled until it is filled. *Preview & send* renders the exact
+email, opt-out line included, and sends it with one click. Opted-out, bounced
+and invalid-domain companies cannot be selected, and the server re-checks all
+three before sending. Every send is logged in `em_send_logs` with the template
+id, so the editor warns before the same company gets the same template twice.
+
 **Compliance:** unsolicited commercial email to businesses is restricted in
 Germany and the EU (UWG §7, GDPR). Every template identifies the sender, gives a
 concrete reason for the contact and ends with an opt-out. The `campaign_contacts`

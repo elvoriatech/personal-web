@@ -15,21 +15,41 @@ import { EMAIL_THEMES, type EmailTheme } from "@/lib/campaigns/themes";
  * theme unless the user overrides it inside the dialog, and "loading" is
  * simply "the result we hold is not for the theme we are showing".
  */
+export type PreviewSend = {
+  /** "Lena Fischer <lena@…>" — who it goes to. */
+  to: string;
+  /** The subject as it will arrive. */
+  subject: string;
+  /** Why Send is unavailable (a missing placeholder, no mail account), or "". */
+  blockedReason: string;
+  /** Sends in the theme currently shown. */
+  onSend: (theme: EmailTheme) => Promise<{ ok: true } | { ok: false; error: string }>;
+};
+
+type SendState = { status: "idle" | "sending" | "sent" | "error"; message: string };
+const IDLE: SendState = { status: "idle", message: "" };
+
 export function EmailPreviewDialog({
   open,
   title,
   theme: callerTheme,
   onClose,
   load,
+  footerNote = "Sample recipient: Lena at Nordlicht Logistik GmbH (logistics). Links are disabled in the preview.",
+  send,
 }: {
   open: boolean;
   title: string;
   theme: EmailTheme;
   onClose: () => void;
   load: (theme: EmailTheme) => Promise<string>;
+  footerNote?: string;
+  /** When set, the footer becomes a send bar: recipient, subject and a Send button. */
+  send?: PreviewSend;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [override, setOverride] = useState<EmailTheme | null>(null);
+  const [sendState, setSendState] = useState<SendState>(IDLE);
   const [result, setResult] = useState<{ theme: EmailTheme; html: string; error: string } | null>(null);
 
   const theme = override ?? callerTheme;
@@ -68,8 +88,21 @@ export function EmailPreviewDialog({
   }, [open, theme, load]);
 
   function close() {
+    // An in-flight send finishes on the server either way; closing only hides it.
     setOverride(null);
+    setSendState(IDLE);
     onClose();
+  }
+
+  async function doSend() {
+    if (!send || sendState.status === "sending") return;
+    setSendState({ status: "sending", message: "" });
+    try {
+      const res = await send.onSend(theme);
+      setSendState(res.ok ? { status: "sent", message: "" } : { status: "error", message: res.error });
+    } catch (err) {
+      setSendState({ status: "error", message: err instanceof Error ? err.message : "Sending failed." });
+    }
   }
 
   return (
@@ -156,10 +189,52 @@ export function EmailPreviewDialog({
           )}
         </div>
 
-        <footer className="border-t border-line px-5 py-2.5 text-[11.5px] text-muted">
-          Sample recipient: Lena at Nordlicht Logistik GmbH (logistics). Links are disabled in
-          the preview.
-        </footer>
+        {send ? (
+          <footer className="border-t border-line px-5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <dl className="min-w-0 flex-1 text-[12.5px] leading-[1.55]">
+                <div className="flex gap-2">
+                  <dt className="w-[58px] shrink-0 text-muted">To</dt>
+                  <dd className="min-w-0 truncate font-medium text-ink">{send.to}</dd>
+                </div>
+                <div className="flex gap-2">
+                  <dt className="w-[58px] shrink-0 text-muted">Subject</dt>
+                  <dd className="min-w-0 truncate text-ink">{send.subject || <span className="text-red-700">(empty)</span>}</dd>
+                </div>
+              </dl>
+              {sendState.status === "sent" ? (
+                <div className="flex items-center gap-3">
+                  <p role="status" className="text-[13px] font-semibold text-green-700">
+                    ✓ Sent
+                  </p>
+                  <button
+                    type="button"
+                    onClick={close}
+                    className="min-h-[42px] rounded-pill border border-line px-5 text-[12.5px] font-semibold text-body hover:border-accent hover:text-accent-deep"
+                  >
+                    Done
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={doSend}
+                  disabled={Boolean(send.blockedReason) || loading || sendState.status === "sending"}
+                  className="accent-gradient min-h-[42px] rounded-pill px-6 font-display text-[12.5px] font-semibold uppercase tracking-[0.08em] text-white disabled:opacity-50"
+                >
+                  {sendState.status === "sending" ? "Sending…" : "Send email"}
+                </button>
+              )}
+            </div>
+            {(send.blockedReason || sendState.status === "error") && (
+              <p role="alert" className="mt-2 text-[12.5px] text-red-700">
+                {sendState.status === "error" ? sendState.message : send.blockedReason}
+              </p>
+            )}
+          </footer>
+        ) : (
+          <footer className="border-t border-line px-5 py-2.5 text-[11.5px] text-muted">{footerNote}</footer>
+        )}
       </div>
     </dialog>
   );

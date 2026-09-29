@@ -177,3 +177,11 @@ CREATE TABLE IF NOT EXISTS mail_connections (
 -- Which transport carries a campaign: 'auto', 'resend', 'microsoft' or 'smtp'.
 ALTER TABLE em_campaigns ADD COLUMN IF NOT EXISTS transport TEXT NOT NULL DEFAULT 'auto';
 ALTER TABLE em_send_jobs ADD COLUMN IF NOT EXISTS transport TEXT NOT NULL DEFAULT 'auto';
+
+-- Company website, shown in the admin and available to templates as {{website}}.
+ALTER TABLE em_recipients ADD COLUMN IF NOT EXISTS website TEXT NOT NULL DEFAULT '';
+-- One-click sends from /admin/templates record which outreach template went out,
+-- so the admin can warn before the same company gets the same email twice.
+ALTER TABLE em_send_logs ADD COLUMN IF NOT EXISTS outreach_template_id TEXT;
+CREATE INDEX IF NOT EXISTS em_send_logs_outreach_idx
+  ON em_send_logs (recipient_id, outreach_template_id) WHERE outreach_template_id IS NOT NULL;

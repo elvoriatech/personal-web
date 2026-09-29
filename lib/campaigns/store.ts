@@ -39,6 +39,7 @@ type RecipientRow = {
   company_name: string;
   contact_name: string;
   email: string;
+  website: string;
   industry: string;
   notes: string;
   status: RecipientStatus;
@@ -59,12 +60,22 @@ type RecipientRow = {
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+
+/** "acme.de", "www.acme.de/" and "http://acme.de" all become "https://acme.de". */
+export function normaliseWebsite(value: string | undefined): string {
+  const v = (value ?? "").trim().replace(/\/+$/, "");
+  if (!v) return "";
+  return /^https?:\/\//i.test(v) ? v : `https://${v}`;
+}
+
 function mapRecipient(r: RecipientRow): Recipient {
   return {
     id: r.id,
     companyName: r.company_name,
     contactName: r.contact_name,
     email: r.email,
+    website: r.website ?? "",
     industry: r.industry,
     notes: r.notes,
     status: r.status,
@@ -84,7 +95,7 @@ function mapRecipient(r: RecipientRow): Recipient {
   };
 }
 
-const RECIPIENT_COLUMNS = `id, company_name, contact_name, email, industry, notes, status,
+const RECIPIENT_COLUMNS = `id, company_name, contact_name, email, website, industry, notes, status,
   auto_follow_up, initial_sent_at, follow_up_1_sent_at, follow_up_2_sent_at, replied_at,
   last_template_type, domain_status, domain_checked_at, bounced_at, bounce_reason,
   opted_out, opted_out_at, created_at`;
@@ -115,7 +126,7 @@ export async function listRecipients(opts: {
     values.push(`%${opts.search.trim().toLowerCase()}%`);
     const i = values.length;
     where.push(
-      `(lower(email) LIKE $${i} OR lower(company_name) LIKE $${i} OR lower(contact_name) LIKE $${i})`
+      `(lower(email) LIKE $${i} OR lower(company_name) LIKE $${i} OR lower(contact_name) LIKE $${i} OR lower(website) LIKE $${i})`
     );
   }
   const clause = where.length ? `WHERE ${where.join(" AND ")}` : "";
@@ -175,11 +186,12 @@ export async function upsertRecipients(
       continue;
     }
     const { rows } = await db().query<{ inserted: boolean }>(
-      `INSERT INTO em_recipients (email, company_name, contact_name, industry, notes)
-       VALUES ($1, $2, $3, $4, $5)
+      `INSERT INTO em_recipients (email, company_name, contact_name, industry, notes, website)
+       VALUES ($1, $2, $3, $4, $5, $6)
        ON CONFLICT (lower(email)) DO UPDATE SET
          company_name = COALESCE(NULLIF(EXCLUDED.company_name, ''), em_recipients.company_name),
          contact_name = COALESCE(NULLIF(EXCLUDED.contact_name, ''), em_recipients.contact_name),
+         website      = COALESCE(NULLIF(EXCLUDED.website, ''), em_recipients.website),
          industry     = COALESCE(NULLIF(EXCLUDED.industry, ''), em_recipients.industry),
          notes        = COALESCE(NULLIF(EXCLUDED.notes, ''), em_recipients.notes),
          updated_at   = now()
@@ -190,6 +202,7 @@ export async function upsertRecipients(
         input.contactName?.trim() ?? "",
         input.industry?.trim() ?? "",
         input.notes?.trim() ?? "",
+        normaliseWebsite(input.website),
       ]
     );
     if (rows[0]?.inserted) inserted++;
@@ -197,6 +210,64 @@ export async function upsertRecipients(
   }
 
   return { inserted, updated, skipped };
+}
+
+/** Edits one company in place. Send history and opt-out state are untouched. */
+export async function updateRecipient(id: string, input: RecipientInput): Promise<Recipient> {
+  const email = input.email.trim().toLowerCase();
+  if (!EMAIL_RE.test(email)) throw new Error("That doesn't look like a valid email address.");
+  try {
+    const { rows } = await db().query<RecipientRow>(
+      `UPDATE em_recipients
+          SET email = $2, company_name = $3, contact_name = $4, website = $5,
+              industry = $6, notes = $7,
+              -- A new address has a new domain; the old audit no longer applies.
+              domain_status = CASE WHEN lower(email) = $2 THEN domain_status ELSE NULL END,
+              domain_checked_at = CASE WHEN lower(email) = $2 THEN domain_checked_at ELSE NULL END,
+              updated_at = now()
+        WHERE id = $1
+        RETURNING ${RECIPIENT_COLUMNS}`,
+      [
+        id,
+        email,
+        input.companyName?.trim() ?? "",
+        input.contactName?.trim() ?? "",
+        normaliseWebsite(input.website),
+        input.industry?.trim() ?? "",
+        input.notes?.trim() ?? "",
+      ]
+    );
+    if (!rows[0]) throw new Error("That company no longer exists.");
+    return mapRecipient(rows[0]);
+  } catch (err) {
+    if ((err as { code?: string }).code === "23505") {
+      throw new Error(`${email} is already in your list under another company.`);
+    }
+    throw err;
+  }
+}
+
+export async function getRecipient(id: string): Promise<Recipient | null> {
+  return (await getRecipientsByIds([id]))[0] ?? null;
+}
+
+/** Outreach templates already sent to one company, newest first. */
+export async function listOutreachSends(
+  recipientIds: string[]
+): Promise<{ recipientId: string; templateId: string; sentAt: string }[]> {
+  if (!recipientIds.length) return [];
+  const { rows } = await db().query<{ recipient_id: string; outreach_template_id: string; sent_at: Date }>(
+    `SELECT DISTINCT ON (recipient_id, outreach_template_id) recipient_id, outreach_template_id, sent_at
+       FROM em_send_logs
+      WHERE recipient_id = ANY($1::uuid[]) AND outreach_template_id IS NOT NULL AND status = 'sent'
+      ORDER BY recipient_id, outreach_template_id, sent_at DESC`,
+    [recipientIds]
+  );
+  return rows.map((r) => ({
+    recipientId: r.recipient_id,
+    templateId: r.outreach_template_id,
+    sentAt: r.sent_at.toISOString(),
+  }));
 }
 
 export async function deleteRecipients(ids: string[]): Promise<number> {
@@ -413,10 +484,12 @@ export async function appendSendLog(entry: {
   email: string;
   status: SendLogStatus;
   errorMessage?: string;
+  /** Set for one-click sends from an outreach template. */
+  outreachTemplateId?: string;
 }): Promise<void> {
   await db().query(
-    `INSERT INTO em_send_logs (campaign_id, recipient_id, template_type, email, status, error_message)
-     VALUES ($1, $2, $3, $4, $5, $6)`,
+    `INSERT INTO em_send_logs (campaign_id, recipient_id, template_type, email, status, error_message, outreach_template_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
     [
       entry.campaignId,
       entry.recipientId,
@@ -424,6 +497,7 @@ export async function appendSendLog(entry: {
       entry.email,
       entry.status,
       entry.errorMessage ?? "",
+      entry.outreachTemplateId ?? null,
     ]
   );
 }

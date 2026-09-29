@@ -66,6 +66,7 @@ const HEADER_ALIASES: Record<Column, string[]> = {
   email: ["email", "e-mail", "mail", "e_mail", "emailaddress", "email address"],
   companyName: ["company", "company name", "companyname", "firma", "unternehmen", "organisation", "organization", "business"],
   contactName: ["name", "contact", "contact name", "contactname", "ansprechpartner", "person", "first name", "full name"],
+  website: ["website", "web site", "url", "web", "homepage", "domain", "webseite", "internetseite"],
   industry: ["industry", "branche", "sector", "category", "kategorie"],
   notes: ["notes", "note", "notizen", "comment", "comments", "bemerkung"],
 };
@@ -100,6 +101,7 @@ export function parseRecipientList(input: string): { rows: ParsedRow[]; columns:
     let companyName = "";
     let industry = "";
     let notes = "";
+    let website = "";
 
     if (header) {
       email = cells[header.email!] ?? "";
@@ -107,13 +109,14 @@ export function parseRecipientList(input: string): { rows: ParsedRow[]; columns:
       contactName = header.contactName !== undefined ? cells[header.contactName] ?? "" : "";
       industry = header.industry !== undefined ? cells[header.industry] ?? "" : "";
       notes = header.notes !== undefined ? cells[header.notes] ?? "" : "";
+      website = header.website !== undefined ? cells[header.website] ?? "" : "";
     } else {
       // Positional: the email can sit anywhere; the rest follow the documented
       // order "email, contact name, company, industry".
       const emailIdx = cells.findIndex((c) => c.includes("@"));
       email = emailIdx >= 0 ? cells[emailIdx] : "";
       const rest = cells.filter((_, i) => i !== emailIdx);
-      [contactName = "", companyName = "", industry = ""] = rest;
+      [contactName = "", companyName = "", industry = "", website = ""] = rest;
       // Without a header the order is a convention. If the cell in the
       // "contact" slot is plainly a company name and the "company" slot is
       // not, the sheet was company-first — swap rather than mis-file it.
@@ -129,12 +132,12 @@ export function parseRecipientList(input: string): { rows: ParsedRow[]; columns:
     else if (seen.has(email)) problem = "duplicate";
     if (!problem) seen.add(email);
 
-    rows.push({ line, email, contactName, companyName, industry, notes, problem });
+    rows.push({ line, email, contactName, companyName, website, industry, notes, problem });
   });
 
   const columns = header
     ? (Object.keys(header) as Column[]).map(labelFor).join(", ")
-    : "email, contact name, company, industry (by position)";
+    : "email, contact name, company, industry, website (by position)";
   return { rows, columns, hadHeader: Boolean(header) };
 }
 
@@ -144,7 +147,14 @@ function looksLikeCompany(value: string): boolean {
 }
 
 function labelFor(c: Column): string {
-  return { email: "email", companyName: "company", contactName: "contact name", industry: "industry", notes: "notes" }[c];
+  return {
+    email: "email",
+    companyName: "company",
+    contactName: "contact name",
+    website: "website",
+    industry: "industry",
+    notes: "notes",
+  }[c];
 }
 
 /* -------------------------------- component ------------------------------- */
@@ -194,6 +204,8 @@ export function AddRecipients({
 
 /* -------------------------------- add one -------------------------------- */
 
+const EMPTY_FORM: RecipientInput = { email: "", companyName: "", contactName: "", website: "", industry: "", notes: "" };
+
 function SingleForm({
   busy,
   onImport,
@@ -201,7 +213,7 @@ function SingleForm({
   busy: boolean;
   onImport: AddRecipientsProps["onImport"];
 }) {
-  const [form, setForm] = useState<RecipientInput>({ email: "", companyName: "", contactName: "", industry: "", notes: "" });
+  const [form, setForm] = useState<RecipientInput>(EMPTY_FORM);
   const [touched, setTouched] = useState(false);
   const [result, setResult] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -226,7 +238,7 @@ function SingleForm({
             ? `${who} was already in the list — details updated.`
             : `Skipped ${who}.`,
       });
-      setForm({ email: "", companyName: "", contactName: "", industry: "", notes: "" });
+      setForm(EMPTY_FORM);
       setTouched(false);
       firstFieldRef.current?.focus();
     } catch (err) {
@@ -236,23 +248,7 @@ function SingleForm({
 
   return (
     <form onSubmit={submit} className="space-y-4" noValidate>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Input ref={firstFieldRef} label="Company" value={form.companyName ?? ""} onChange={set("companyName")} placeholder="Nordlicht Logistik GmbH" autoComplete="organization" />
-        <Input label="Contact name" value={form.contactName ?? ""} onChange={set("contactName")} placeholder="Lena Fischer" hint="First name is used in the greeting." autoComplete="off" />
-        <Input
-          label="Email"
-          required
-          type="email"
-          value={form.email}
-          onChange={set("email")}
-          onBlur={() => setTouched(true)}
-          placeholder="lena.fischer@nordlicht-logistik.de"
-          error={emailError}
-          autoComplete="off"
-        />
-        <Input label="Industry" value={form.industry ?? ""} onChange={set("industry")} placeholder="logistics" hint='Fills {{industry}} — lower case reads best mid-sentence.' autoComplete="off" />
-      </div>
-      <Input label="Notes" value={form.notes ?? ""} onChange={set("notes")} placeholder="Where you found them, anything worth remembering" autoComplete="off" />
+      <CompanyFields form={form} set={set} emailError={emailError} onEmailBlur={() => setTouched(true)} firstFieldRef={firstFieldRef} />
       <div className="flex flex-wrap items-center gap-4">
         <button
           type="submit"
@@ -272,6 +268,51 @@ function SingleForm({
 }
 
 type AddRecipientsProps = Parameters<typeof AddRecipients>[0];
+
+/** The company fields, shared by "Add one" and the edit form on the Companies page. */
+export function CompanyFields({
+  form,
+  set,
+  emailError,
+  onEmailBlur,
+  firstFieldRef,
+}: {
+  form: RecipientInput;
+  set: (k: keyof RecipientInput) => (v: string) => void;
+  emailError: string;
+  onEmailBlur: () => void;
+  firstFieldRef?: Ref<HTMLInputElement>;
+}) {
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Input ref={firstFieldRef} label="Company name" value={form.companyName ?? ""} onChange={set("companyName")} placeholder="Nordlicht Logistik GmbH" autoComplete="off" />
+        <Input label="Contact person" value={form.contactName ?? ""} onChange={set("contactName")} placeholder="Lena Fischer" hint="Their first name is used in the greeting." autoComplete="off" />
+        <Input label="Website" type="url" value={form.website ?? ""} onChange={set("website")} placeholder="nordlicht-logistik.de" hint="Look at it before you write — your email should mention something specific." autoComplete="off" />
+        <Input
+          label="Email"
+          required
+          type="email"
+          value={form.email}
+          onChange={set("email")}
+          onBlur={onEmailBlur}
+          placeholder="lena.fischer@nordlicht-logistik.de"
+          error={emailError}
+          autoComplete="off"
+        />
+      </div>
+      <details className="group rounded-xl border border-line/70 px-4 py-2.5 open:pb-4">
+        <summary className="cursor-pointer text-[12px] font-semibold text-body select-none hover:text-ink">
+          Industry and notes <span className="font-normal text-muted">(optional)</span>
+        </summary>
+        <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <Input label="Industry" value={form.industry ?? ""} onChange={set("industry")} placeholder="logistics" hint="Fills {{industry}} — lower case reads best mid-sentence." autoComplete="off" />
+          <Input label="Notes" value={form.notes ?? ""} onChange={set("notes")} placeholder="Where you found them, anything worth remembering" autoComplete="off" />
+        </div>
+      </details>
+    </>
+  );
+}
 
 /* ------------------------------ bulk import ------------------------------ */
 
@@ -307,6 +348,7 @@ function BulkImport({
           email: r.email,
           companyName: r.companyName,
           contactName: r.contactName,
+          website: r.website,
           industry: r.industry,
           notes: r.notes,
         }))
@@ -340,12 +382,12 @@ function BulkImport({
               setText(e.target.value);
               setFileName("");
             }}
-            placeholder={"email, contact name, company, industry\nlena@nordlicht-logistik.de, Lena Fischer, Nordlicht Logistik GmbH, logistics"}
+            placeholder={"company, contact name, website, email\nNordlicht Logistik GmbH, Lena Fischer, nordlicht-logistik.de, lena@nordlicht-logistik.de"}
             className="w-full resize-y rounded-xl border border-line bg-surface px-3.5 py-2.5 font-mono text-[12.5px] leading-[1.6] text-ink placeholder:text-muted focus:border-accent"
           />
           <p className="mt-1 text-[11.5px] text-muted">
             One company per line. Comma, semicolon or tab separated. A header row like
-            <code className="mx-1 rounded bg-bg-tint px-1">email, company, name, industry</code>
+            <code className="mx-1 rounded bg-bg-tint px-1">company, contact name, website, email</code>
             is detected and used for the column order.{" "}
             <a
               href="/samples/companies-sample.csv"
@@ -412,7 +454,7 @@ function BulkImport({
                   <th className="py-1.5 pr-3">Company</th>
                   <th className="py-1.5 pr-3">Contact</th>
                   <th className="py-1.5 pr-3">Email</th>
-                  <th className="py-1.5 pr-3">Industry</th>
+                  <th className="py-1.5 pr-3">Website</th>
                   <th className="py-1.5">Check</th>
                 </tr>
               </thead>
@@ -423,7 +465,7 @@ function BulkImport({
                     <td className="py-1.5 pr-3 text-ink">{r.companyName || <span className="text-muted">—</span>}</td>
                     <td className="py-1.5 pr-3 text-body">{r.contactName || <span className="text-muted">—</span>}</td>
                     <td className="py-1.5 pr-3 break-all text-body">{r.email || <span className="text-muted">—</span>}</td>
-                    <td className="py-1.5 pr-3 text-body">{r.industry || <span className="text-muted">—</span>}</td>
+                    <td className="py-1.5 pr-3 break-all text-body">{r.website || <span className="text-muted">—</span>}</td>
                     <td className="py-1.5">
                       {r.problem === "" && <span className="text-green-700">ok</span>}
                       {r.problem === "no_email" && <span className="text-amber-700">no email</span>}
@@ -467,7 +509,7 @@ function BulkImport({
 
 /* --------------------------------- input --------------------------------- */
 
-function Input({
+export function Input({
   ref,
   label,
   value,

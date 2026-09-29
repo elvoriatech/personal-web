@@ -26,6 +26,8 @@ export type Recipient = {
   companyName: string;
   contactName: string;
   email: string;
+  /** Normalised to https://…, or empty. */
+  website: string;
   industry: string;
   notes: string;
   status: RecipientStatus;
@@ -50,6 +52,7 @@ export type RecipientInput = {
   email: string;
   companyName?: string;
   contactName?: string;
+  website?: string;
   industry?: string;
   notes?: string;
 };

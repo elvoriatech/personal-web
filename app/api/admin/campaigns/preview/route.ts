@@ -33,7 +33,13 @@ export async function GET(request: Request) {
   const template = await getTemplate(type as EmailTemplateType);
   if (!template) return new Response("Template not found", { status: 404 });
 
-  return html(render(template.subject, template.bodyHtml, theme));
+  return html(
+    render(
+      applyTemplateVars(template.subject, SAMPLE_VARS),
+      applyTemplateVars(template.bodyHtml, SAMPLE_VARS),
+      theme
+    )
+  );
 }
 
 export async function POST(request: Request) {
@@ -50,15 +56,11 @@ export async function POST(request: Request) {
     vars?: Record<string, string>;
   };
   const theme = coerceEmailTheme(body.theme, DEFAULT_CAMPAIGN_THEME);
-  const extra = sanitizeVars(body.vars);
-  return html(
-    render(
-      fillPlaceholders(body.subject ?? "", extra),
-      fillPlaceholders(body.bodyHtml ?? "", extra),
-      theme,
-      body.showOptOut ?? true
-    )
-  );
+  // Callers that pass their own values get exactly those. The campaign
+  // template editor passes none and wants the sample recipient.
+  const fill = (text: string) =>
+    body.vars ? fillPlaceholders(text, sanitizeVars(body.vars)) : applyTemplateVars(text, SAMPLE_VARS);
+  return html(render(fill(body.subject ?? ""), fill(body.bodyHtml ?? ""), theme, body.showOptOut ?? true));
 }
 
 /** Only short string values under simple keys; this is admin-supplied but still untrusted input. */
@@ -72,8 +74,8 @@ function sanitizeVars(vars: unknown): Record<string, string> {
 }
 
 function render(subject: string, bodyText: string, theme: EmailTheme, showOptOut = true): string {
-  return wrapCampaignEmailHtml(plainTextToHtml(applyTemplateVars(bodyText, SAMPLE_VARS)), {
-    preheader: applyTemplateVars(subject, SAMPLE_VARS),
+  return wrapCampaignEmailHtml(plainTextToHtml(bodyText), {
+    preheader: subject,
     showOptOut,
     theme,
   });

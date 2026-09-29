@@ -42,6 +42,9 @@ export function RecipientsTable({
   onSelectPage,
   onClearSelection,
   onBulk,
+  onEdit,
+  title = "Recipients",
+  emptyHint = "No recipients yet. Add a company above to get started.",
 }: {
   rows: Recipient[];
   total: number;
@@ -54,6 +57,10 @@ export function RecipientsTable({
   onSelectPage: (ids: string[], select: boolean) => void;
   onClearSelection: () => void;
   onBulk: (action: BulkAction) => void;
+  /** Shows an Edit button per row when set. */
+  onEdit?: (r: Recipient) => void;
+  title?: string;
+  emptyHint?: string;
 }) {
   const [searchDraft, setSearchDraft] = useState(query.search);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -81,7 +88,7 @@ export function RecipientsTable({
       {/* ------------------------------ header ------------------------------ */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-[14px] font-semibold text-ink">Recipients</h2>
+          <h2 className="font-display text-[14px] font-semibold text-ink">{title}</h2>
           <p className="mt-0.5 text-[12px] text-muted">
             {totalAll} in your list
             {query.filter !== "all" || query.search ? ` · ${total} match this view` : ""}
@@ -193,7 +200,7 @@ export function RecipientsTable({
       {rows.length === 0 ? (
         <p className="mt-6 rounded-xl border border-dashed border-line px-4 py-8 text-center text-[13px] text-body">
           {totalAll === 0
-            ? "No recipients yet. Add a company above to get started."
+            ? emptyHint
             : query.search
               ? `Nothing matches “${query.search}”.`
               : `No recipients are ${FILTERS.find((f) => f.id === query.filter)?.label.toLowerCase()}.`}
@@ -220,6 +227,7 @@ export function RecipientsTable({
                 <th scope="col" className="py-2">Industry</th>
                 <th scope="col" className="py-2">Status</th>
                 <th scope="col" className="py-2">Domain</th>
+                {onEdit && <th scope="col" className="py-2"><span className="sr-only">Actions</span></th>}
               </tr>
             </thead>
             <tbody>
@@ -244,6 +252,16 @@ export function RecipientsTable({
                     <td className="py-2.5 pr-3">
                       <p className="font-medium text-ink">{r.companyName || <span className="text-muted">—</span>}</p>
                       {r.contactName && <p className="text-[11.5px] text-muted">{r.contactName}</p>}
+                      {r.website && (
+                        <a
+                          href={r.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11.5px] break-all text-accent-deep underline-offset-2 hover:underline"
+                        >
+                          {r.website.replace(/^https?:\/\//, "")}
+                        </a>
+                      )}
                     </td>
                     <td className="py-2.5 pr-3 text-body">
                       <span className="break-all">{r.email}</span>
@@ -276,6 +294,13 @@ export function RecipientsTable({
                         <span>unchecked</span>
                       )}
                     </td>
+                    {onEdit && (
+                      <td className="py-2 text-right">
+                        <Action onClick={() => onEdit(r)} disabled={busy}>
+                          Edit<span className="sr-only"> {r.companyName || r.email}</span>
+                        </Action>
+                      </td>
+                    )}
                   </tr>
                 );
               })}

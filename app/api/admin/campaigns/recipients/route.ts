@@ -5,6 +5,7 @@ import {
   recipientStats,
   setOptedOut,
   setRecipientStatus,
+  updateRecipient,
   upsertRecipients,
   type RecipientInput,
 } from "@/lib/campaigns/store";
@@ -43,7 +44,9 @@ export async function POST(request: Request) {
 
   try {
     const body = (await request.json()) as {
-      action?: "import" | "delete" | "opt_out" | "opt_in" | "set_status";
+      action?: "import" | "update" | "delete" | "opt_out" | "opt_in" | "set_status";
+      id?: string;
+      recipient?: RecipientInput;
       recipients?: RecipientInput[];
       ids?: string[];
       status?: RecipientStatus;
@@ -51,6 +54,9 @@ export async function POST(request: Request) {
     };
 
     switch (body.action) {
+      case "update":
+        if (!body.id || !body.recipient) throw new Error("Nothing to update.");
+        return Response.json({ recipient: await updateRecipient(body.id, body.recipient) });
       case "delete":
         return Response.json({ affected: await deleteRecipients(body.ids ?? []) });
       case "opt_out":
