@@ -1,9 +1,11 @@
 import "server-only";
 
+import type { ReactNode } from "react";
 import {
   Document,
   Font,
   Image,
+  Link,
   Page,
   StyleSheet,
   Text,
@@ -106,7 +108,7 @@ type Sheet = ReturnType<typeof sheet>;
 
 function Bullet({ s, children }: { s: Sheet; children: string }) {
   return (
-    <View style={s.bulletRow}>
+    <View style={s.bulletRow} wrap={false}>
       <Text style={s.bulletDot}>•</Text>
       <Text style={s.bulletText}>{children}</Text>
     </View>
@@ -169,18 +171,21 @@ function ResumeDocument({ resume, t }: { resume: ResumeDoc; t: Scale }) {
         <Section s={s} title="Professional Experience" />
         {resume.roles.map((role) => (
           <View key={`${role.company}-${role.start}`}>
-            <Text style={s.roleTitle} minPresenceAhead={KEEP_AHEAD}>
-              {role.title}
-            </Text>
-            <View style={s.roleMeta}>
-              <Text style={s.italic}>
-                {role.company}, {role.location}
-              </Text>
-              <Text style={s.dates}>
-                {role.start} - {role.end}
-              </Text>
+            <View wrap={false}>
+              <Text style={s.roleTitle}>{role.title}</Text>
+              <View style={s.roleMeta}>
+                <Text style={s.italic}>
+                  {role.company}, {role.location}
+                </Text>
+                <Text style={s.dates}>
+                  {role.start} - {role.end}
+                </Text>
+              </View>
+              {role.bullets.slice(0, 1).map((b) => (
+                <Bullet key={b} s={s}>{b}</Bullet>
+              ))}
             </View>
-            {role.bullets.map((b) => (
+            {role.bullets.slice(1).map((b) => (
               <Bullet key={b} s={s}>{b}</Bullet>
             ))}
           </View>
@@ -191,15 +196,18 @@ function ResumeDocument({ resume, t }: { resume: ResumeDoc; t: Scale }) {
             <Section s={s} title="AI Engineering Projects" />
             {resume.aiProjects.map((project) => (
               <View key={project.name}>
-                <Text style={{ ...s.roleTitle, fontSize: t.body }} minPresenceAhead={KEEP_AHEAD}>
-                  {project.name}
-                </Text>
-                {project.role ? (
-                  <Text style={{ ...s.small, fontStyle: "italic", marginBottom: 4 }}>
-                    {project.role}
-                  </Text>
-                ) : null}
-                {project.bullets.map((b) => (
+                <View wrap={false}>
+                  <Text style={{ ...s.roleTitle, fontSize: t.body }}>{project.name}</Text>
+                  {project.role ? (
+                    <Text style={{ ...s.small, fontStyle: "italic", marginBottom: 4 }}>
+                      {project.role}
+                    </Text>
+                  ) : null}
+                  {project.bullets.slice(0, 1).map((b) => (
+                    <Bullet key={b} s={s}>{b}</Bullet>
+                  ))}
+                </View>
+                {project.bullets.slice(1).map((b) => (
                   <Bullet key={b} s={s}>{b}</Bullet>
                 ))}
               </View>
@@ -317,6 +325,8 @@ const design = StyleSheet.create({
   sidebarText: { fontSize: 8, marginBottom: 3 },
   contactLabel: { fontSize: 7.5, color: ACCENT, fontWeight: "bold" },
   contactValue: { fontSize: 8.5, marginBottom: 4 },
+  contactValueLine: { fontSize: 8.5 },
+  contactLink: { color: "#000000", textDecoration: "none" },
   headline: { fontSize: 11, fontWeight: "bold", marginBottom: 3 },
   section: {
     fontSize: 11,
@@ -337,6 +347,80 @@ const design = StyleSheet.create({
 });
 
 type Photo = { data: Buffer; format: "png" | "jpg" };
+
+function DesignBullet({ children }: { children: string }) {
+  return (
+    <View style={design.bulletRow} wrap={false}>
+      <Text style={design.bulletDot}>•</Text>
+      <Text style={design.bulletText}>{children}</Text>
+    </View>
+  );
+}
+
+/**
+ * A heading block with its bullets. The heading and the first bullet are one
+ * unbreakable unit, so a job title can never sit alone at the foot of a page
+ * with its company and bullets on the next.
+ */
+function DesignEntry({ heading, bullets }: { heading: ReactNode; bullets: string[] }) {
+  return (
+    <View>
+      <View wrap={false}>
+        {heading}
+        {bullets.slice(0, 1).map((b) => (
+          <DesignBullet key={b}>{b}</DesignBullet>
+        ))}
+      </View>
+      {bullets.slice(1).map((b) => (
+        <DesignBullet key={b}>{b}</DesignBullet>
+      ))}
+    </View>
+  );
+}
+
+/* The sidebar's text column is 148pt; at 8.5pt Helvetica that is about 30
+   characters. Hyphenation is off, so a longer unbroken token — a LinkedIn URL —
+   does not wrap: it runs out of the sidebar and over the main column. */
+const SIDEBAR_MAX_CHARS = 30;
+
+/**
+ * A URL as a person would write it on a résumé ("linkedin.com/in/name"), cut
+ * into lines at "/" (or "@", "-") so each one fits the sidebar.
+ */
+function sidebarLines(value: string): string[] {
+  const text = value.trim().replace(/^https?:\/\//i, "").replace(/^www\./i, "").replace(/\/+$/, "");
+  const lines: string[] = [];
+  let rest = text;
+  while (rest.length > SIDEBAR_MAX_CHARS) {
+    const head = rest.slice(0, SIDEBAR_MAX_CHARS);
+    const cut = Math.max(head.lastIndexOf("/"), head.lastIndexOf("@"), head.lastIndexOf("-"), head.lastIndexOf("."));
+    // No natural break in reach: cut hard rather than overflow.
+    const at = cut > 0 ? cut + 1 : SIDEBAR_MAX_CHARS;
+    lines.push(rest.slice(0, at));
+    rest = rest.slice(at);
+  }
+  if (rest) lines.push(rest);
+  return lines;
+}
+
+const asHref = (value: string) => (/^https?:\/\//i.test(value.trim()) ? value.trim() : `https://${value.trim()}`);
+
+/** A contact link in the sidebar: clickable, and wrapped so it stays inside the column. */
+function SidebarLink({ label, value }: { label: string; value: string }) {
+  const lines = sidebarLines(value);
+  return (
+    <View wrap={false}>
+      <Text style={design.contactLabel}>{label}</Text>
+      <Link src={asHref(value)} style={design.contactLink}>
+        {lines.map((line, i) => (
+          <Text key={line + i} style={i === lines.length - 1 ? design.contactValue : design.contactValueLine}>
+            {line}
+          </Text>
+        ))}
+      </Link>
+    </View>
+  );
+}
 
 function DesignDocument({ resume, photo }: { resume: ResumeDoc; photo: Photo | null }) {
   const values = [...resume.education, ...resume.certifications];
@@ -370,35 +454,25 @@ function DesignDocument({ resume, photo }: { resume: ResumeDoc; photo: Photo | n
             )
               .filter(([, value]) => Boolean(value))
               .map(([label, value]) => (
-                <View key={label}>
+                <View key={label} wrap={false}>
                   <Text style={design.contactLabel}>{label.toUpperCase()}</Text>
                   <Text style={design.contactValue}>{value}</Text>
                 </View>
               ))}
-            {resume.linkedin ? (
-              <View>
-                <Text style={design.contactLabel}>LINKEDIN</Text>
-                <Text style={design.contactValue}>{resume.linkedin}</Text>
-              </View>
-            ) : null}
-            {resume.github ? (
-              <View>
-                <Text style={design.contactLabel}>GITHUB</Text>
-                <Text style={design.contactValue}>{resume.github}</Text>
-              </View>
-            ) : null}
+            {resume.linkedin ? <SidebarLink label="LINKEDIN" value={resume.linkedin} /> : null}
+            {resume.github ? <SidebarLink label="GITHUB" value={resume.github} /> : null}
 
-            <Text style={design.sidebarHeading}>SKILLS</Text>
+            <Text style={design.sidebarHeading} minPresenceAhead={KEEP_AHEAD}>SKILLS</Text>
             {resume.skills.map((group) => (
-              <View key={group.label}>
+              <View key={group.label} wrap={false}>
                 <Text style={design.sidebarLabel}>{group.label}</Text>
                 <Text style={design.sidebarText}>{group.items}</Text>
               </View>
             ))}
 
-            <Text style={design.sidebarHeading}>EDUCATION</Text>
+            <Text style={design.sidebarHeading} minPresenceAhead={KEEP_AHEAD}>EDUCATION</Text>
             {values.map((item) => (
-              <View key={item.qualification}>
+              <View key={item.qualification} wrap={false}>
                 <Text style={design.sidebarLabel}>{item.qualification}</Text>
                 <Text style={design.sidebarText}>
                   {item.institution}, {item.period}
@@ -406,7 +480,7 @@ function DesignDocument({ resume, photo }: { resume: ResumeDoc; photo: Photo | n
               </View>
             ))}
 
-            <Text style={design.sidebarHeading}>LANGUAGES</Text>
+            <Text style={design.sidebarHeading} minPresenceAhead={KEEP_AHEAD}>LANGUAGES</Text>
             <Text style={design.sidebarText}>{resume.languages}</Text>
           </View>
 
@@ -420,20 +494,18 @@ function DesignDocument({ resume, photo }: { resume: ResumeDoc; photo: Photo | n
               EXPERIENCE
             </Text>
             {resume.roles.map((role) => (
-              <View key={`${role.company}-${role.start}`}>
-                <Text style={design.roleTitle} minPresenceAhead={KEEP_AHEAD}>
-                  {role.title}
-                </Text>
-                <Text style={design.roleMeta}>
-                  {role.company}, {role.location}  |  {role.start} - {role.end}
-                </Text>
-                {role.bullets.map((b) => (
-                  <View key={b} style={design.bulletRow}>
-                    <Text style={design.bulletDot}>•</Text>
-                    <Text style={design.bulletText}>{b}</Text>
-                  </View>
-                ))}
-              </View>
+              <DesignEntry
+                key={`${role.company}-${role.start}`}
+                bullets={role.bullets}
+                heading={
+                  <>
+                    <Text style={design.roleTitle}>{role.title}</Text>
+                    <Text style={design.roleMeta}>
+                      {role.company}, {role.location}  |  {role.start} - {role.end}
+                    </Text>
+                  </>
+                }
+              />
             ))}
 
             {resume.aiProjects.length > 0 && (
@@ -442,17 +514,11 @@ function DesignDocument({ resume, photo }: { resume: ResumeDoc; photo: Photo | n
                   AI ENGINEERING PROJECTS
                 </Text>
                 {resume.aiProjects.map((project) => (
-                  <View key={project.name}>
-                    <Text style={design.roleTitle} minPresenceAhead={KEEP_AHEAD}>
-                      {project.name}
-                    </Text>
-                    {project.bullets.map((b) => (
-                      <View key={b} style={design.bulletRow}>
-                        <Text style={design.bulletDot}>•</Text>
-                        <Text style={design.bulletText}>{b}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  <DesignEntry
+                    key={project.name}
+                    bullets={project.bullets}
+                    heading={<Text style={design.roleTitle}>{project.name}</Text>}
+                  />
                 ))}
               </>
             )}
@@ -461,7 +527,7 @@ function DesignDocument({ resume, photo }: { resume: ResumeDoc; photo: Photo | n
               SELECTED PROJECTS
             </Text>
             {resume.projects.map((project) => (
-              <Text key={project.name} style={{ marginBottom: 3 }}>
+              <Text key={project.name} style={{ marginBottom: 3 }} wrap={false}>
                 <Text style={design.bold}>
                   {project.url ? `${project.name} (${project.url})` : project.name}:{" "}
                 </Text>

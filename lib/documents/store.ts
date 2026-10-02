@@ -45,7 +45,7 @@ export async function getDocuments(): Promise<DocumentBundle> {
         "SELECT bundle FROM site_documents WHERE id = $1",
         [ROW_ID]
       );
-      if (rows[0]?.bundle) return rows[0].bundle;
+      if (rows[0]?.bundle) return tidy(rows[0].bundle);
     } catch (err) {
       // A missing table or an unreachable database must not take the site down;
       // the public pages fall back to the seed content.
@@ -54,7 +54,33 @@ export async function getDocuments(): Promise<DocumentBundle> {
     return defaultDocuments;
   }
 
-  return (await readLocal()) ?? defaultDocuments;
+  const local = await readLocal();
+  return local ? tidy(local) : defaultDocuments;
+}
+
+/**
+ * A bullet pasted from Word or Markdown often arrives with its own marker
+ * ("* Built…", "- Built…"). Every layout draws the bullet itself, so a marker
+ * left in the text shows up as a second one. Stripped on read, so the PDF, the
+ * Word file and the web preview all agree whatever is stored.
+ */
+const stripMarker = (line: string) => line.replace(/^\s*(?:[*•·▪◦‣–—-]\s+)+/, "").trim();
+
+function tidy(bundle: DocumentBundle): DocumentBundle {
+  const clean = <T extends { bullets: string[] }>(item: T): T => ({
+    ...item,
+    bullets: (item.bullets ?? []).map(stripMarker).filter(Boolean),
+  });
+  const resume = bundle.resume;
+  if (!resume) return bundle;
+  return {
+    ...bundle,
+    resume: {
+      ...resume,
+      roles: (resume.roles ?? []).map(clean),
+      aiProjects: (resume.aiProjects ?? []).map(clean),
+    },
+  };
 }
 
 export async function saveDocuments(bundle: DocumentBundle): Promise<void> {
