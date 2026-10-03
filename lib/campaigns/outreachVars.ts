@@ -34,6 +34,7 @@ export const EXTRA_PLACEHOLDER_HINTS: Record<string, { label: string; hint: stri
   },
   role: { label: "Role", hint: "The job or project title you are writing about." },
   deadline: { label: "Deadline", hint: "e.g. “Friday” or “the end of the month”." },
+  availableFrom: { label: "Available from", hint: "e.g. “1 November 2026” or “now”." },
 };
 
 export function senderVars(): Record<string, string> {
