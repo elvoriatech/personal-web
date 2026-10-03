@@ -393,7 +393,12 @@ function sidebarLines(value: string): string[] {
   let rest = text;
   while (rest.length > SIDEBAR_MAX_CHARS) {
     const head = rest.slice(0, SIDEBAR_MAX_CHARS);
-    const cut = Math.max(head.lastIndexOf("/"), head.lastIndexOf("@"), head.lastIndexOf("-"), head.lastIndexOf("."));
+    // Break after "/" or "@" where possible. Never leave "-" at a line end:
+    // PDF text extraction (and so an ATS) reads that as a soft hyphen and
+    // drops it, turning "zahoor-ahmed-3414a79b" into "zahoor-ahmed3414a79b".
+    const slash = Math.max(head.lastIndexOf("/"), head.lastIndexOf("@"));
+    const other = Math.max(head.lastIndexOf("."), head.lastIndexOf("-") - 1);
+    const cut = slash > 0 ? slash : other;
     // No natural break in reach: cut hard rather than overflow.
     const at = cut > 0 ? cut + 1 : SIDEBAR_MAX_CHARS;
     lines.push(rest.slice(0, at));
