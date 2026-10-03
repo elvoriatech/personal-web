@@ -14,74 +14,47 @@ import type { DocumentBundle } from "@/lib/documents/types";
 export const defaultDocuments: DocumentBundle = {
   resume: {
     fullName: "Zahoor Ahmed",
-    headline: "Senior Software Engineer | AI / LLM Engineer",
-    location: "Mülheim-Kärlich, Germany",
+    headline: "Senior Full-Stack Engineer | TypeScript, Angular, NestJS, AWS | LLM applications",
+    location: "Mülheim-Kärlich (Koblenz), Germany",
     phone: "+49 162 3363430",
     email: "zahoor_ahmed143@hotmail.com",
     extras: "Permanent Residency | German B1",
     // Recruiters look for both. Fill these in and they appear automatically;
     // left blank they are omitted rather than printed as dead labels.
-    linkedin: "linkedin.com/in/zahoorahmed",
+    linkedin: "linkedin.com/in/zahoor-ahmed-3414a79b",
     github: "github.com/zwebapps",
     preferredVariant: "ats",
     photoShape: "square",
+    /*
+     * Written to read like a person describing their own work: what the thing
+     * was and who used it, plain verbs, no "scalable / high-performance /
+     * production-ready" filler, and no invented numbers.
+     */
     summary:
-      "Senior Software Engineer and AI/LLM Engineer with 8+ years of experience building scalable enterprise applications, microservices and cloud-native systems across fleet telematics, e-commerce and airline technology. Experienced with TypeScript, Node.js, Python, AWS and Kubernetes, with a hands-on focus on Generative AI, Retrieval-Augmented Generation (RAG), LLM applications, AI agents and vector-based retrieval. Designs production-ready APIs, distributed systems and AI workflows using LangChain, LangGraph, OpenAI and AWS Bedrock, working in Agile and Scrum teams with test-driven development.",
+      "Full-stack engineer, building web software since 2016, mostly in TypeScript. I work on fleet-telematics apps at PTC Telematik (Angular, NestJS, PostgreSQL, Kubernetes on AWS). Before that I built an auto-parts marketplace in Stuttgart and worked on an airline booking platform in Dubai. In the last year I've been building LLM products in my own time; one crawls websites and opens SEO fixes as GitHub pull requests.",
     skills: [
-      {
-        label: "AI / Generative AI",
-        items:
-          "Generative AI, Large Language Models (LLM), Retrieval-Augmented Generation (RAG), Agentic AI, AI Agents, Multi-Agent Systems, Model Context Protocol (MCP), Prompt Engineering, Function / Tool Calling, Structured Outputs, Response Streaming, Embeddings, Vector Search, Semantic Search, Chunking Strategies, Context Engineering, Hallucination Mitigation, Guardrails, LLM Evaluation and Benchmarking, AI Observability and Tracing, Token and Cost Optimisation",
-      },
-      {
-        label: "AI Frameworks, Models and Infrastructure",
-        items:
-          "LangChain, LangGraph, LangSmith, OpenAI API, Anthropic Claude, Hugging Face, Ollama, OpenRouter, AWS Bedrock, Amazon SageMaker, Chroma DB, Neo4j Graph Retrieval, Python, FastAPI, Jupyter",
-      },
-      {
-        label: "Programming",
-        items: "TypeScript, JavaScript, Python, Java, Kotlin, PHP",
-      },
+      { label: "Languages", items: "TypeScript, JavaScript, Python, Java, PHP" },
+      { label: "Frontend", items: "Angular, React, Vue / Nuxt, Next.js, NgRx, Redux" },
       {
         label: "Backend",
-        items:
-          "Node.js, NestJS, FastAPI, Spring Boot, REST APIs, GraphQL, Microservices, Event-Driven Architecture",
+        items: "Node.js, NestJS, FastAPI, Spring Boot, REST, GraphQL, PostgreSQL, MongoDB, Elasticsearch, CouchDB, Redis",
       },
-      {
-        label: "Frontend",
-        items:
-          "Angular, React, Next.js, Vue.js, Redux, NgRx, Progressive Web Apps (PWA), Responsive Design",
-      },
-      {
-        label: "Databases and Vector Stores",
-        items:
-          "PostgreSQL, MongoDB, Chroma DB, Neo4j, Redis, Elasticsearch, CouchDB, Entity-Relationship Modeling (ERM), UML",
-      },
-      {
-        label: "Cloud and DevOps",
-        items:
-          "Amazon Web Services (AWS), Lambda, API Gateway, Amazon ECS, S3, CloudFront, CloudFormation, Docker, Kubernetes, GitLab Continuous Integration / Continuous Deployment (CI/CD), Grafana",
-      },
-      {
-        label: "Testing and Practice",
-        items:
-          "Jest, Playwright, Mocha, End-to-End (E2E) Testing, Test-Driven Development (TDD), Agile, Scrum, Software Development Life Cycle (SDLC), Code Review",
-      },
+      { label: "Cloud", items: "AWS (Lambda, API Gateway, ECS, S3, CloudFormation), Docker, Kubernetes, GitLab CI, Grafana" },
+      { label: "AI", items: "OpenAI and Claude APIs, LangChain, LangGraph, RAG, vector search, Ollama" },
+      { label: "Testing", items: "Jest, Playwright, test-driven development" },
     ],
     roles: [
       {
         title: "Senior Software Engineer",
         company: "PTC Telematik GmbH",
-        location: "Coblenz, Germany",
+        location: "Koblenz, Germany",
         start: "December 2024",
         end: "Present",
         bullets: [
-          "Build Angular 19 and TypeScript PWA modules for fleet telematics, from test-driven development through to deployment.",
-          "Architect NestJS backend services with PostgreSQL, covering schema design and REST APIs.",
-          "Operate Kubernetes-based microservices on AWS, ensuring scalability and high availability in production.",
-          "Build CI/CD pipelines in GitLab CI with Grafana-based monitoring and observability.",
-          "Develop Kotlin services for real-time vehicle route tracking and fleet monitoring.",
-          "Deliver a full AWS serverless stack (Lambda, API Gateway, CloudFront, S3, CodePipeline) with SNS notifications.",
+          "Build the Angular 19 web app fleet operators use to manage their vehicles, written test-first with Jest and Playwright.",
+          "Write the NestJS services and PostgreSQL schema behind it.",
+          "Run the services on Kubernetes and maintain the GitLab CI pipelines and Grafana monitoring.",
+          "Work on tracking and analysing live vehicle data.",
         ],
       },
       {
@@ -91,11 +64,11 @@ export const defaultDocuments: DocumentBundle = {
         start: "December 2022",
         end: "August 2024",
         bullets: [
-          "Architected a microservices-based e-commerce platform for auto parts using Vue.js, Node.js, TypeScript and PostgreSQL.",
-          "Built a real-time admin dashboard with Socket.io and implemented Elasticsearch for high-performance product search.",
-          "Integrated the Amazon Seller API over SOAP and REST, automating eBay, Amazon and Tyre24 order synchronisation via cron jobs.",
-          "Containerised services on AWS and designed CouchDB analytics queries alongside bulk import and export workflows.",
-          "Automated DHL address correction through DHL REST and SOAP APIs, reducing manual support overhead.",
+          "Built the shop, admin panel and fulfilment services for an auto-parts marketplace in Node.js, Vue / Nuxt and TypeScript.",
+          "Automated order sync with Amazon, eBay and Tyre24 using the Amazon Seller API and scheduled jobs.",
+          "Brought product data from TecDoc and several suppliers into one catalogue that fed every marketplace.",
+          "Wrote an automatic address check against DHL's APIs, which cut manual support work.",
+          "Built \"Cockpit\", a live dashboard for the team, with import and export.",
         ],
       },
       {
@@ -105,12 +78,10 @@ export const defaultDocuments: DocumentBundle = {
         start: "October 2019",
         end: "October 2022",
         bullets: [
-          "Developed an NDC flight booking platform (Angular, React, Node.js, PostgreSQL) from scratch to production.",
-          "Integrated GDS and airline suppliers using Java Spring Boot microservices behind AWS API Gateway.",
-          "Managed complex booking state with NgRx and Redux, adapting frontend workflows to dynamic client requirements.",
-          "Secured the application with JWT, OAuth 2.0, CORS and HTTP interceptors.",
-          "Designed and deployed a full AWS architecture using Lambda, API Gateway, CloudFormation, Route 53 and SNS.",
-          "Built GitLab CI/CD pipelines on AWS ECS and applied TDD with Jest and Playwright across the end-to-end booking flow.",
+          "Worked on an airline booking platform in Angular, React and Node.js, from flight search through payment and changes after booking.",
+          "Integrated Stripe and EasyPay, voucher generation and flight-supplier systems, with the supplier side in Java Spring.",
+          "Handled authentication and security: JWT, OAuth 2.0, sessions.",
+          "Deployed on AWS (Lambda, API Gateway, ECS, CloudFormation) with Jest and Playwright tests in GitLab CI.",
         ],
       },
       {
@@ -120,9 +91,8 @@ export const defaultDocuments: DocumentBundle = {
         start: "September 2018",
         end: "August 2019",
         bullets: [
-          "Built web servers and REST APIs with Node.js and Express, covering routing, middleware, cookies and sessions.",
-          "Developed reusable React front-ends with Redux state management across hotel, real-estate and social products.",
-          "Used Webpack for bundling and Jenkins for continuous integration, with Git and JIRA across the team.",
+          "Built Node.js and MongoDB APIs with JWT and role-based access, and React / Redux front ends.",
+          "Integrated payment gateways and Google Maps.",
         ],
       },
       {
@@ -131,47 +101,27 @@ export const defaultDocuments: DocumentBundle = {
         location: "Jhelum, Pakistan",
         start: "January 2017",
         end: "August 2018",
-        bullets: [
-          "Developed dynamic websites on core PHP, CodeIgniter and Laravel backends.",
-          "Built WordPress themes and custom plugins for a range of clients.",
-          "Delivered Java web and Android applications backed by SQLite.",
-        ],
+        bullets: ["Built PHP websites and booking and order systems for clients, with PayPal and Stripe payments."],
       },
     ],
     /**
-     * Evidence for the AI positioning, drawn from work actually in the repos.
-     * Add measurable results (throughput, latency, time saved) as soon as you
-     * have real figures — invented numbers are the fastest way to lose an
-     * interview, so none are stated here.
+     * Own work, in development or live. Add a real result (users, pages
+     * crawled, PRs merged) as soon as there is one — invented numbers are the
+     * fastest way to lose an interview, so none are stated here.
      */
     aiProjects: [
       {
-        name: "RankForge AI — Autonomous SEO Engineer",
-        role: "Creator, full stack and AI engineering",
+        name: "RankForge AI (in development)",
+        role: "Own project",
         bullets: [
-          "Built a multi-tenant Generative AI platform that crawls a website, analyses it with LLM agents and opens the resulting fixes as GitHub pull requests.",
-          "Implemented the agent layer over Ollama and OpenRouter, with task decomposition, tool calling and structured outputs.",
-          "Built the ingestion and crawling pipeline in Playwright, with BullMQ background workers and a Fastify orchestration API.",
-          "Integrated GitHub and Google Search Console through Model Context Protocol (MCP) clients, closing the loop from recommendation to measured ranking change.",
-          "Modelled tenants, crawls and findings in PostgreSQL via Prisma.",
+          "Crawls a website, uses LLM agents to find SEO problems, and opens the fixes as GitHub pull requests.",
+          "TypeScript, Playwright crawler, BullMQ workers, PostgreSQL; models through Ollama and OpenRouter.",
         ],
       },
       {
-        name: "DeutschFlow AI — Conversational Language Tutor",
-        role: "Creator",
-        bullets: [
-          "Built an AI German-language tutor using conversational LLM agents over graded source material.",
-          "Implemented Retrieval-Augmented Generation (RAG) with document chunking, embeddings and semantic retrieval to keep responses grounded in the correct proficiency level.",
-        ],
-      },
-      {
-        name: "Applied AI Engineering Programme — Turing College",
-        role: "Programme projects",
-        bullets: [
-          "Built Retrieval-Augmented Generation (RAG) applications with LangChain, covering ingestion, chunking, embeddings, vector retrieval and LLM response generation.",
-          "Developed multi-agent workflows in LangGraph using task decomposition, tool calling and long-term memory.",
-          "Applied prompt engineering, LLM benchmarking and response evaluation to improve reliability and reduce hallucination.",
-        ],
+        name: "DeutschFlow AI (in development)",
+        role: "Own project",
+        bullets: ["A German tutor that answers from graded learning material, using RAG with LangChain."],
       },
     ],
     projects: [
@@ -179,40 +129,22 @@ export const defaultDocuments: DocumentBundle = {
         name: "Guessto",
         url: "guessto.com",
         summary:
-          "Multi-tenant restaurant discovery and ordering platform; every venue runs on its own subdomain from a single codebase, with QR ordering and Stripe payments.",
-      },
-      {
-        name: "RankForge AI",
-        url: "",
-        summary:
-          "Autonomous SEO engineer that crawls a site, analyses it with LLM agents, generates fixes as GitHub pull requests and tracks the resulting rankings.",
-      },
-      {
-        name: "Retromotion",
-        url: "retromotion.com",
-        summary:
-          "Microservices auto-parts marketplace with Elasticsearch search and automated marketplace order synchronisation.",
-      },
-      {
-        name: "TPConnects",
-        url: "tpconnects.com",
-        summary:
-          "NDC and IATA-certified air retailing platform with GDS and airline supplier integration.",
+          "Live restaurant ordering platform. Each restaurant gets its own subdomain, with QR ordering and Stripe payments.",
       },
       {
         name: "DUDI",
         url: "dudiapp.com",
-        summary: "Sports community platform shipping on web, iOS and Android.",
+        summary: "Sports community app on web, iOS and Android.",
       },
       {
         name: "UniKoop",
         url: "unikoop.nl",
-        summary: "Dutch home-shopping storefront with a full catalogue and checkout flow.",
+        summary: "Dutch home-shopping shop with catalogue and checkout.",
       },
     ],
     education: [
       {
-        qualification: "B.Eng. Software Engineering (BSCSE)",
+        qualification: "B.Eng. Software Engineering",
         institution: "Virtual University of Pakistan",
         period: "2014 - 2018",
       },
@@ -227,8 +159,7 @@ export const defaultDocuments: DocumentBundle = {
         qualification: "AI Engineering Programme",
         institution: "Turing College",
         period: "2026",
-        detail:
-          "Prompt engineering and LLM benchmarking, RAG with LangChain, function calling, and production AI agents with long-term memory.",
+        detail: "RAG with LangChain, LLM agents with LangGraph, prompt evaluation.",
       },
     ],
     languages: "English (professional working proficiency), German (B1)",
