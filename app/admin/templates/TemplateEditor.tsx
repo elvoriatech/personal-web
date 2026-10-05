@@ -3,6 +3,7 @@
 import { useActionState, useCallback, useState } from "react";
 import { saveTemplates, type SaveState } from "../actions";
 import type { PickableCompany } from "@/components/admin/CompanyPicker";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { EmailPreviewDialog, type PreviewSend } from "@/components/admin/EmailPreviewDialog";
 import { Card, Field, SaveBar, SmallButton, TextArea } from "@/components/admin/Fields";
 import { TransportPicker } from "@/components/admin/TransportPicker";
@@ -268,32 +269,12 @@ export function TemplateEditor({
                       {t.purpose || t.subject} · archived {t.archivedAt}
                     </p>
                   </div>
-                  {confirmDelete === t.id ? (
-                    <div className="flex flex-wrap items-center gap-2 text-[12px] text-red-800">
-                      Delete “{t.name || t.id}” permanently?
-                      <button
-                        type="button"
-                        onClick={() => destroy(t.id)}
-                        className="min-h-[32px] rounded-pill bg-red-600 px-3.5 text-[11.5px] font-semibold text-white"
-                      >
-                        Delete
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmDelete(null)}
-                        className="min-h-[32px] rounded-pill border border-line bg-surface px-3.5 text-[11.5px] font-semibold text-body"
-                      >
-                        Keep
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <SmallButton onClick={() => restore(t.id)}>Restore</SmallButton>
-                      <SmallButton tone="danger" onClick={() => setConfirmDelete(t.id)}>
-                        Delete permanently
-                      </SmallButton>
-                    </div>
-                  )}
+                  <div className="flex gap-2">
+                    <SmallButton onClick={() => restore(t.id)}>Restore</SmallButton>
+                    <SmallButton tone="danger" onClick={() => setConfirmDelete(t.id)}>
+                      Delete permanently
+                    </SmallButton>
+                  </div>
                 </li>
               ))}
             </ul>
@@ -302,6 +283,16 @@ export function TemplateEditor({
       </div>
 
       <SaveBar state={state} canSave={canSave} />
+
+      <ConfirmDialog
+        open={confirmDelete !== null}
+        title={`Delete “${items.find((t) => t.id === confirmDelete)?.name || confirmDelete}”?`}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={() => confirmDelete && destroy(confirmDelete)}
+      >
+        The template is removed from this list. Click <strong>Save changes</strong> afterwards to
+        delete it for good — until then, reloading the page brings it back.
+      </ConfirmDialog>
 
       <EmailPreviewDialog
         open={preview !== null}

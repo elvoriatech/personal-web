@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import { RECIPIENTS_PAGE_SIZES } from "@/lib/campaigns/constants";
 import { TEMPLATE_LABELS, type Recipient } from "@/lib/campaigns/types";
 import { formatDate, type RecipientFilter, type RecipientQuery, type Stats } from "./api";
@@ -67,7 +68,7 @@ export function RecipientsTable({
 }) {
   const [searchDraft, setSearchDraft] = useState(query.search);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmRow, setConfirmRow] = useState<string | null>(null);
+  const [confirmRow, setConfirmRow] = useState<Recipient | null>(null);
 
   // Debounce typing into a single query change; the parent does the fetch.
   useEffect(() => {
@@ -161,42 +162,18 @@ export function RecipientsTable({
               Clear
             </button>
           </p>
-          {confirmDelete ? (
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-red-800">
-              Delete {selected.size} recipient{selected.size === 1 ? "" : "s"}? This cannot be undone.
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  setConfirmDelete(false);
-                  onBulk("delete");
-                }}
-                className="min-h-[32px] rounded-pill bg-red-600 px-3.5 text-[11.5px] font-semibold text-white disabled:opacity-50"
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="min-h-[32px] rounded-pill border border-line bg-surface px-3.5 text-[11.5px] font-semibold text-body"
-              >
-                Keep
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-1.5">
-              <Action onClick={() => onBulk("mark_replied")} disabled={busy}>Mark replied</Action>
-              <Action onClick={() => onBulk("reset")} disabled={busy}>Reset to not sent</Action>
-              {query.filter === "opted_out" ? (
-                <Action onClick={() => onBulk("opt_in")} disabled={busy}>Undo opt-out</Action>
-              ) : (
-                <Action onClick={() => onBulk("opt_out")} disabled={busy}>Opt out</Action>
-              )}
-              <Action tone="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
-                Delete
-              </Action>
-            </div>
-          )}
+          <div className="flex flex-wrap gap-1.5">
+            <Action onClick={() => onBulk("mark_replied")} disabled={busy}>Mark replied</Action>
+            <Action onClick={() => onBulk("reset")} disabled={busy}>Reset to not sent</Action>
+            {query.filter === "opted_out" ? (
+              <Action onClick={() => onBulk("opt_in")} disabled={busy}>Undo opt-out</Action>
+            ) : (
+              <Action onClick={() => onBulk("opt_out")} disabled={busy}>Opt out</Action>
+            )}
+            <Action tone="danger" onClick={() => setConfirmDelete(true)} disabled={busy}>
+              Delete
+            </Action>
+          </div>
         </div>
       )}
 
@@ -300,42 +277,18 @@ export function RecipientsTable({
                     </td>
                     {(onEdit || onDelete) && (
                       <td className="py-2 text-right">
-                        {confirmRow === r.id && onDelete ? (
-                          <div className="flex flex-wrap items-center justify-end gap-1.5 text-[11.5px] text-red-800">
-                            Delete permanently?
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() => {
-                                setConfirmRow(null);
-                                onDelete(r);
-                              }}
-                              className="min-h-[32px] rounded-pill bg-red-600 px-3 text-[11.5px] font-semibold text-white disabled:opacity-50"
-                            >
-                              Delete
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmRow(null)}
-                              className="min-h-[32px] rounded-pill border border-line bg-surface px-3 text-[11.5px] font-semibold text-body"
-                            >
-                              Keep
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex justify-end gap-1.5">
-                            {onEdit && (
-                              <Action onClick={() => onEdit(r)} disabled={busy}>
-                                Edit<span className="sr-only"> {r.companyName || r.email}</span>
-                              </Action>
-                            )}
-                            {onDelete && (
-                              <Action tone="danger" onClick={() => setConfirmRow(r.id)} disabled={busy}>
-                                Delete<span className="sr-only"> {r.companyName || r.email}</span>
-                              </Action>
-                            )}
-                          </div>
-                        )}
+                        <div className="flex justify-end gap-1.5">
+                          {onEdit && (
+                            <Action onClick={() => onEdit(r)} disabled={busy}>
+                              Edit<span className="sr-only"> {r.companyName || r.email}</span>
+                            </Action>
+                          )}
+                          {onDelete && (
+                            <Action tone="danger" onClick={() => setConfirmRow(r)} disabled={busy}>
+                              Delete<span className="sr-only"> {r.companyName || r.email}</span>
+                            </Action>
+                          )}
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -390,6 +343,32 @@ export function RecipientsTable({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`Delete ${selected.size} ${selected.size === 1 ? "company" : "companies"}?`}
+        onCancel={() => setConfirmDelete(false)}
+        onConfirm={() => {
+          setConfirmDelete(false);
+          onBulk("delete");
+        }}
+      >
+        They are removed from your list permanently. Emails already sent stay in the send log. This
+        cannot be undone.
+      </ConfirmDialog>
+
+      <ConfirmDialog
+        open={confirmRow !== null}
+        title={`Delete ${confirmRow?.companyName || confirmRow?.email || "this company"}?`}
+        onCancel={() => setConfirmRow(null)}
+        onConfirm={() => {
+          if (confirmRow && onDelete) onDelete(confirmRow);
+          setConfirmRow(null);
+        }}
+      >
+        {confirmRow?.email} is removed from your list permanently. Emails already sent stay in the
+        send log. This cannot be undone.
+      </ConfirmDialog>
     </section>
   );
 }

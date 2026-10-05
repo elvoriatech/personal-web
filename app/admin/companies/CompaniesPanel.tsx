@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import { ConfirmDialog } from "@/components/admin/ConfirmDialog";
 import type { Recipient, RecipientInput } from "@/lib/campaigns/types";
 import { AddRecipients, CompanyFields } from "../campaigns/_components/AddRecipients";
 import { api, type Stats } from "../campaigns/_components/api";
@@ -121,6 +122,8 @@ function EditCompany({
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const [error, setError] = useState("");
   const sectionRef = useRef<HTMLElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -137,8 +140,8 @@ function EditCompany({
   const label = company.companyName || company.email;
 
   async function remove() {
-    setSaving(true);
-    setError("");
+    setDeleting(true);
+    setDeleteError("");
     try {
       await api("/api/admin/campaigns/recipients", {
         method: "POST",
@@ -146,8 +149,9 @@ function EditCompany({
       });
       await onDeleted(label);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete the company.");
-      setSaving(false);
+      // Stay in the dialog so the admin sees why and can retry or cancel.
+      setDeleteError(err instanceof Error ? err.message : "Could not delete the company.");
+      setDeleting(false);
     }
   }
 
@@ -198,34 +202,13 @@ function EditCompany({
           >
             Cancel
           </button>
-          {confirmDelete ? (
-            <span className="flex flex-wrap items-center gap-2 text-[12.5px] text-red-800">
-              Delete {label}? This cannot be undone.
-              <button
-                type="button"
-                onClick={remove}
-                disabled={saving}
-                className="min-h-[36px] rounded-pill bg-red-600 px-4 text-[12px] font-semibold text-white disabled:opacity-50"
-              >
-                Delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmDelete(false)}
-                className="min-h-[36px] rounded-pill border border-line bg-surface px-4 text-[12px] font-semibold text-body"
-              >
-                Keep
-              </button>
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="min-h-[42px] rounded-pill border border-red-200 px-5 text-[12.5px] font-semibold text-red-700 hover:bg-red-50 sm:ml-auto"
-            >
-              Delete company
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="min-h-[42px] rounded-pill border border-red-200 px-5 text-[12.5px] font-semibold text-red-700 hover:bg-red-50 sm:ml-auto"
+          >
+            Delete company
+          </button>
           {error && (
             <p role="alert" className="text-[13px] text-red-600">
               {error}
@@ -233,6 +216,21 @@ function EditCompany({
           )}
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        title={`Delete ${label}?`}
+        busy={deleting}
+        error={deleteError}
+        onCancel={() => {
+          setConfirmDelete(false);
+          setDeleteError("");
+        }}
+        onConfirm={remove}
+      >
+        {company.email} is removed from your list permanently. Emails already sent stay in the send
+        log. This cannot be undone.
+      </ConfirmDialog>
     </section>
   );
 }
