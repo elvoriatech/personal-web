@@ -53,6 +53,11 @@ export function CompaniesPanel({
             list.setNotice({ tone: "ok", text: `Saved ${name}.` });
             await list.refresh();
           }}
+          onDeleted={async (name) => {
+            setEditing(null);
+            list.setNotice({ tone: "ok", text: `Deleted ${name}.` });
+            await list.refresh();
+          }}
         />
       ) : (
         <AddRecipients busy={list.busy} onImport={list.importRecipients} />
@@ -97,10 +102,12 @@ function EditCompany({
   company,
   onCancel,
   onSaved,
+  onDeleted,
 }: {
   company: Recipient;
   onCancel: () => void;
   onSaved: (name: string) => Promise<void>;
+  onDeleted: (name: string) => Promise<void>;
 }) {
   const [form, setForm] = useState<RecipientInput>({
     email: company.email,
@@ -112,6 +119,7 @@ function EditCompany({
   });
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
   const sectionRef = useRef<HTMLElement>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
@@ -124,6 +132,23 @@ function EditCompany({
 
   const emailValid = EMAIL_RE.test(form.email.trim());
   const set = (k: keyof RecipientInput) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const label = company.companyName || company.email;
+
+  async function remove() {
+    setSaving(true);
+    setError("");
+    try {
+      await api("/api/admin/campaigns/recipients", {
+        method: "POST",
+        body: JSON.stringify({ action: "delete", ids: [company.id] }),
+      });
+      await onDeleted(label);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete the company.");
+      setSaving(false);
+    }
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -172,6 +197,34 @@ function EditCompany({
           >
             Cancel
           </button>
+          {confirmDelete ? (
+            <span className="flex flex-wrap items-center gap-2 text-[12.5px] text-red-800">
+              Delete {label}? This cannot be undone.
+              <button
+                type="button"
+                onClick={remove}
+                disabled={saving}
+                className="min-h-[36px] rounded-pill bg-red-600 px-4 text-[12px] font-semibold text-white disabled:opacity-50"
+              >
+                Delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="min-h-[36px] rounded-pill border border-line bg-surface px-4 text-[12px] font-semibold text-body"
+              >
+                Keep
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="min-h-[42px] rounded-pill border border-red-200 px-5 text-[12.5px] font-semibold text-red-700 hover:bg-red-50 sm:ml-auto"
+            >
+              Delete company
+            </button>
+          )}
           {error && (
             <p role="alert" className="text-[13px] text-red-600">
               {error}
