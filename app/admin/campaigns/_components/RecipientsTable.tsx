@@ -43,6 +43,7 @@ export function RecipientsTable({
   onClearSelection,
   onBulk,
   onEdit,
+  onDelete,
   title = "Recipients",
   emptyHint = "No recipients yet. Add a company above to get started.",
 }: {
@@ -59,11 +60,14 @@ export function RecipientsTable({
   onBulk: (action: BulkAction) => void;
   /** Shows an Edit button per row when set. */
   onEdit?: (r: Recipient) => void;
+  /** Shows a per-row Delete button with an inline confirmation when set. */
+  onDelete?: (r: Recipient) => void;
   title?: string;
   emptyHint?: string;
 }) {
   const [searchDraft, setSearchDraft] = useState(query.search);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmRow, setConfirmRow] = useState<string | null>(null);
 
   // Debounce typing into a single query change; the parent does the fetch.
   useEffect(() => {
@@ -227,7 +231,7 @@ export function RecipientsTable({
                 <th scope="col" className="py-2">Industry</th>
                 <th scope="col" className="py-2">Status</th>
                 <th scope="col" className="py-2">Domain</th>
-                {onEdit && <th scope="col" className="py-2"><span className="sr-only">Actions</span></th>}
+                {(onEdit || onDelete) && <th scope="col" className="py-2"><span className="sr-only">Actions</span></th>}
               </tr>
             </thead>
             <tbody>
@@ -294,11 +298,44 @@ export function RecipientsTable({
                         <span>unchecked</span>
                       )}
                     </td>
-                    {onEdit && (
+                    {(onEdit || onDelete) && (
                       <td className="py-2 text-right">
-                        <Action onClick={() => onEdit(r)} disabled={busy}>
-                          Edit<span className="sr-only"> {r.companyName || r.email}</span>
-                        </Action>
+                        {confirmRow === r.id && onDelete ? (
+                          <div className="flex flex-wrap items-center justify-end gap-1.5 text-[11.5px] text-red-800">
+                            Delete permanently?
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setConfirmRow(null);
+                                onDelete(r);
+                              }}
+                              className="min-h-[32px] rounded-pill bg-red-600 px-3 text-[11.5px] font-semibold text-white disabled:opacity-50"
+                            >
+                              Delete
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmRow(null)}
+                              className="min-h-[32px] rounded-pill border border-line bg-surface px-3 text-[11.5px] font-semibold text-body"
+                            >
+                              Keep
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex justify-end gap-1.5">
+                            {onEdit && (
+                              <Action onClick={() => onEdit(r)} disabled={busy}>
+                                Edit<span className="sr-only"> {r.companyName || r.email}</span>
+                              </Action>
+                            )}
+                            {onDelete && (
+                              <Action tone="danger" onClick={() => setConfirmRow(r.id)} disabled={busy}>
+                                Delete<span className="sr-only"> {r.companyName || r.email}</span>
+                              </Action>
+                            )}
+                          </div>
+                        )}
                       </td>
                     )}
                   </tr>

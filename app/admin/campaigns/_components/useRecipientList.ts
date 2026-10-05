@@ -116,6 +116,21 @@ export function useRecipientList({
       }[action];
     });
 
+  const removeOne = (r: Recipient) =>
+    run("Delete failed.", async () => {
+      await api("/api/admin/campaigns/recipients", {
+        method: "POST",
+        body: JSON.stringify({ action: "delete", ids: [r.id] }),
+      });
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(r.id);
+        return next;
+      });
+      await refresh();
+      return `Deleted ${r.companyName || r.email}.`;
+    });
+
   const audit = () =>
     run("Audit failed.", async () => {
       const res = await api<{ checked: number; invalid: number }>("/api/admin/campaigns/audit", {
@@ -160,6 +175,7 @@ export function useRecipientList({
     updateQuery,
     importRecipients,
     bulk,
+    removeOne,
     audit,
     toggle,
     selectPage,

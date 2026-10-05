@@ -93,6 +93,7 @@ export function CompaniesPanel({
         onClearSelection={() => list.setSelected(new Set())}
         onBulk={list.bulk}
         onEdit={setEditing}
+        onDelete={list.removeOne}
       />
     </div>
   );
